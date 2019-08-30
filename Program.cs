@@ -103,47 +103,49 @@ namespace TcpUdpServer
         public static MacTcpUdp GetRelation(Socket device)
         {
             MacTcpUdp value = null;
-            lock (locker)
+            //lock (locker)
+            //{
+                
+            //}
+
+            var target = (IPEndPoint)device.RemoteEndPoint;
+            foreach (var key in macRelation.Keys)
             {
-                var target = (IPEndPoint)device.RemoteEndPoint;
-                foreach (var key in macRelation.Keys)
+                var item = macRelation[key];
+                if (item != null && item.device != null)
                 {
-                    var item = macRelation[key];
-                    if (item != null && item.device != null)
+                    var d = item.device;
+                    try
                     {
-                        var d = item.device;
-                        try
+                        var ipEnd = (IPEndPoint)d.RemoteEndPoint;
+                        if (ipEnd != null && target.Address.Equals(ipEnd.Address) && target.Port.Equals(ipEnd.Port))
                         {
-                            var ipEnd = (IPEndPoint)d.RemoteEndPoint;
-                            if (ipEnd != null && target.Address.Equals(ipEnd.Address) && target.Port.Equals(ipEnd.Port))
-                            {
-                                value = macRelation[key];
-                                value.mac = key;
-                                break;
-                            }
+                            value = macRelation[key];
+                            value.mac = key;
+                            break;
                         }
-                        catch (Exception ex)
+                    }
+                    catch (Exception ex)
+                    {
+                        //180.155.69.150    486    异常：112无法访问已释放的对象。
+                        if (d.Connected)
                         {
-                            //180.155.69.150    486    异常：112无法访问已释放的对象。
-                            if (d.Connected)
-                            {
-                                var _msg = "异常：112" + ex.Message + "是否链接" + d.Connected;
-                                LogHelper.Info(_msg, device);
-                                removeOnlineTcpRelation(d);
-                            }
-                            return null;
-
+                            var _msg = "异常：112" + ex.Message + "是否链接" + d.Connected;
+                            LogHelper.Info(_msg, device);
+                            removeOnlineTcpRelation(d);
                         }
-
+                        return null;
 
                     }
 
+
                 }
-                return value;
+
             }
+            return value;
 
 
-              
+
 
         }
 
@@ -161,12 +163,12 @@ namespace TcpUdpServer
                     {
                         macRelation.Remove(mu.mac);
                     }
-                    //var _rm = (IPEndPoint)device.RemoteEndPoint;
-                    //var _msg = "移除" + _rm.Address + " " + _rm.Port;
+                    var _rm = (IPEndPoint)device.RemoteEndPoint;
+                    var _msg = "移除" + _rm.Address + " " + _rm.Port;
                     device.Shutdown(SocketShutdown.Both);
                     device.Disconnect(true);
                     device.Close();
-                    //LogHelper.Info(_msg);
+                    LogHelper.Info(_msg);
                 }
                 catch (Exception ex)
                 {
@@ -184,7 +186,7 @@ namespace TcpUdpServer
 
 
 
-        const string ipaddress = "192.168.1.205";
+        const string ipaddress = "192.168.1.210";
 
         const int tcpPort = 4198;
         const int udpPort = 4530;
@@ -195,7 +197,6 @@ namespace TcpUdpServer
             {
                 TUdpServer udpServer = new TUdpServer();
                 udpServer.UdpStart(ipaddress, udpPort);
-
 
                 MTcpServer tcpServer = new MTcpServer();
                 tcpServer.Start(ipaddress, tcpPort);

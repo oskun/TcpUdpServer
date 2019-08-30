@@ -59,25 +59,23 @@ namespace TcpUdpServer
             {
                 hexString = hexString + "0";
             }
+
             //声明字符串变量
             byte[] buffer = new byte[hexString.Length / 2];
-
-            for (int i = 0; i < buffer.Length; i++)
+            if (Regex.IsMatch(hexString, "[0-9a-f]{" + hexString.Length + "}", RegexOptions.IgnoreCase))
             {
-                //将指定基的数字的字符串表示形式转换为等效的8位无符号整数
-                //即将字符串转换为16进制形式的字节
-                var c = hexString.Substring(i * 2, 2);
-                if (Regex.IsMatch(c, "[0-9a-f]{2}", RegexOptions.IgnoreCase))
+                for (int i = 0; i < buffer.Length; i++)
                 {
+                    //将指定基的数字的字符串表示形式转换为等效的8位无符号整数
+                    //即将字符串转换为16进制形式的字节
+                    var c = hexString.Substring(i * 2, 2);
                     buffer[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 0x10);
+
                 }
-                else
-                {
-                    Console.WriteLine("错误");
-                    buffer[i] = 0;
-                }
-               
             }
+
+
+
             return buffer;
         }
 
