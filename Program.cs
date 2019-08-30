@@ -186,11 +186,11 @@ namespace TcpUdpServer
 
 
 
-        const string ipaddress = "192.168.1.210";
+        //const string ipaddress = "192.168.1.8";
 
         const int tcpPort = 4198;
         const int udpPort = 4530;
-       // const string ipaddress = "115.29.231.29";
+        const string ipaddress = "115.29.231.29";
         static void Main(string[] args)
         {
             try
