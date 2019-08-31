@@ -26,7 +26,7 @@ namespace TcpUdpServer
         //public event onStart tcpStart;
 
 
-        public void Start(string ipaddress,int  tcpPort)
+        public void Start(string ipaddress, int tcpPort)
         {
             var config = new ServerConfig(tcpPort, 4530, ipaddress);
             Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -108,111 +108,113 @@ namespace TcpUdpServer
             {
                 var socket = td.socket;
 
-                if (socket != null && socket.Connected)
+                try
                 {
-                    try
+                    ///客户端断开连接时，会引发一个异常
+                    var len = socket.EndReceive(ar);
+                    if (len == 0)
                     {
-                        var len = socket.EndReceive(ar);
-                      
-                        if (len == 0)
-                        {
-                            td = null;
-                            var _d = (IPEndPoint)socket.RemoteEndPoint;
-                            Console.WriteLine("设备断开" + _d.Address + ":" + _d.Port);
-                            RemoveOnLine(socket);
-                            ar = null;
-                        }
-                        else
-                        {
+                        ///主动告知
+                        td = null;
+                        var _d = (IPEndPoint)socket.RemoteEndPoint;
+                        Console.WriteLine("设备断开" + _d.Address + ":" + _d.Port);
+                        Program.removeOnlineTcpRelation(socket);
+                        ar = null;
+                    }
+                    else
+                    {
 
-                            var bys = td.bs.ToList().GetRange(0, len).ToArray();
-                            var Info = MsgTypeHelper.GetHearBeatInfo(bys);
-
-                            Task.Factory.StartNew(() => {
-                                if (Info != null)
-                                {
-
-                                    var heartBeatType = Info.heartBeatType;
-                                    //忆林
-                                    if (heartBeatType == HeartBeatType.YILIN)
-                                    {
-                                        YiLinMethod(socket, Info, bys);
-                                    }
-                                    ///汉枫
-                                    else if (heartBeatType == HeartBeatType.HANFEN)
-                                    {
-                                        HanFengMethod(socket, Info, bys);
-                                    }
-                                    ///校验时间
-                                    else if (heartBeatType == HeartBeatType.CHECK_TIME)
-                                    {
-                                        checkTimeMethod(socket, Info, bys);
-                                    }
-                                    ///报警
-                                    else if (heartBeatType == HeartBeatType.BAOJING)
-                                    {
-                                        BaoJinMethod(socket, Info, bys);
-                                    }
-                                    ///命令返回
-                                    else if (heartBeatType == HeartBeatType.DEFAULT)
-                                    {
-                                        defualtMethod(socket, Info, bys);
-
-                                    }
-                                }
-
-
-                            });
+                        var bys = td.bs.ToList().GetRange(0, len).ToArray();
+                        var Info = MsgTypeHelper.GetHearBeatInfo(bys);
+                        //Task.Factory.StartNew(() =>
+                        //{
                            
+
+
+                        //});
+                        if (Info != null)
+                        {
+
                             try
                             {
-                                if(socket.Connected)
+                                var heartBeatType = Info.heartBeatType;
+                                //忆林
+                                if (heartBeatType == HeartBeatType.YILIN)
                                 {
-                                    socket.BeginReceive(td.bs, 0, td.bs.Length, SocketFlags.None, onTcpReceive, td);
+                                    YiLinMethod(socket, Info, bys);
                                 }
-                                else
+                                ///汉枫
+                                else if (heartBeatType == HeartBeatType.HANFEN)
                                 {
-                                    LogHelper.Info("TCP 179尝试设备已经断开");
-                                    RemoveOnLine(socket);
-                                    ar.AsyncWaitHandle.Close();
-                                    LogHelper.Info("设备已经断开");
+                                    HanFengMethod(socket, Info, bys);
                                 }
-                              
+                                ///校验时间
+                                else if (heartBeatType == HeartBeatType.CHECK_TIME)
+                                {
+                                    checkTimeMethod(socket, Info, bys);
+                                }
+                                ///报警
+                                else if (heartBeatType == HeartBeatType.BAOJING)
+                                {
+                                    BaoJinMethod(socket, Info, bys);
+                                }
+                                ///命令返回
+                                else if (heartBeatType == HeartBeatType.DEFAULT)
+                                {
+                                    defualtMethod(socket, Info, bys);
 
-
-
-
-
+                                }
                             }
                             catch (Exception ex)
                             {
-                                RemoveOnLine(socket);                              
-                                Console.WriteLine("tcp 130" + ex.Message);
+                                LogHelper.Info("tcp:168" + ex.Message);
+                            }
+
+                        }
+
+
+
+                        try
+                        {
+                            if (socket.Connected)
+                            {
+                                socket.BeginReceive(td.bs, 0, td.bs.Length, SocketFlags.None, onTcpReceive, td);
+                            }
+                            else
+                            {
+                                LogHelper.Info("TCP 179尝试设备已经断开");
+                                Program.removeOnlineTcpRelation(socket);
+                                ar.AsyncWaitHandle.Close();
                                 LogHelper.Info("设备已经断开");
-                                ar = null;
                             }
 
 
+
+
+
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.removeOnlineTcpRelation(socket);
+                            Console.WriteLine("tcp 130" + ex.Message);
+                            LogHelper.Info("设备已经断开");
+                            ar = null;
                         }
                     }
-                    catch (SocketException ex)
-                    {
-                       
-                        Console.WriteLine("tcp:138    errorCode:" + ex.ErrorCode);
-                        //StackTrace stack = new StackTrace();
-                        //var colNumber = stack.ToString();
-                        //var ep = (IPEndPoint)socket.RemoteEndPoint;
-                        //Console.WriteLine("_tcp:138" + ep.Address + "  " + ep.Port + colNumber);
-                        RemoveOnLine(socket);
-                        ar = null;
-                    }
                 }
-                else
+                catch (SocketException ex)
                 {
-                    RemoveOnLine(socket);
-                    ar.AsyncWaitHandle.Dispose();
+
+                    Console.WriteLine("tcp:138    errorCode:" + ex.ErrorCode);
+                    //StackTrace stack = new StackTrace();
+                    //var colNumber = stack.ToString();
+                    //var ep = (IPEndPoint)socket.RemoteEndPoint;
+                    //Console.WriteLine("_tcp:138" + ep.Address + "  " + ep.Port + colNumber);
+                    Program.removeOnlineTcpRelation(socket);
+                    ar = null;
                 }
-                
+
 
 
             }
@@ -242,6 +244,9 @@ namespace TcpUdpServer
             var mu = Program.GetRelation(socket);
             if (mu != null)
             {
+
+
+                #region 长度小于5时等待接下来的数据
                 if (ds.Length < 5)
                 {
                     var orgds = ds;
@@ -294,17 +299,17 @@ namespace TcpUdpServer
                             else if (len == 0)
                             {
                                 LogHelper.Info("再次获取的时候居然断开了。。。。");
-                                RemoveOnLine(socket);
+                                Program.removeOnlineTcpRelation(socket);
 
 
                             }
                         }
-                        catch(SocketException sek)
+                        catch (SocketException sek)
                         {
                             Console.WriteLine(sek.Message);
-                            RemoveOnLine(socket);
+                            Program.removeOnlineTcpRelation(socket);
                         }
-                        
+
 
                     });
                     thread.Start();
@@ -313,6 +318,8 @@ namespace TcpUdpServer
 
 
                 }
+                #endregion
+
                 else
                 {
                     SendMsgToClient(ds, mu);
@@ -340,10 +347,12 @@ namespace TcpUdpServer
             }
             var bdata = Encoding.UTF8.GetBytes(JsonHelper<Status<string>>.GetJson(new Status<string>() { code = "1", data = rdata, mac = mac, msg = "", commandType = "1" }));
             var queue = mu.clients;
+            ///能否正常发通UDP
+            var flag = true;
             while (queue != null && queue.Count > 0)
             {
                 var el = queue.Dequeue();
-                if (el!=null&&!(el.time.AddSeconds(10) < DateTime.Now))
+                if (el != null && !(el.time.AddSeconds(10) < DateTime.Now))
                 {
                     try
                     {
@@ -352,18 +361,31 @@ namespace TcpUdpServer
 
                             LogHelper.Info("返回：" + mac + " 数据" + rdata);
                             var iet = (IPEndPoint)el.point;
-                            if(!iet.Address.Equals(IPAddress.Any))
+                            if (!iet.Address.Equals(IPAddress.Any))
                             {
-                                mu.udpServer.SendTo(bdata, el.point);
+                                try
+                                {
+                                    if (flag)
+                                    {
+                                        mu.udpServer.SendTo(bdata, el.point);
+                                    }
+
+                                }
+                                catch (SocketException ex)
+                                {
+                                    flag = false;
+                                    queue.Clear();
+                                    LogHelper.Info("TCP:378:   " + ex.Message);
+                                }
+
                             }
-                          
+
                         }
 
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
-
+                        Console.WriteLine("TCP:395" + ex.Message);
                     }
 
                 }
@@ -555,7 +577,7 @@ namespace TcpUdpServer
 
             //Task.Factory.StartNew(() =>
             //{
-               
+
 
 
             //});
@@ -570,7 +592,7 @@ namespace TcpUdpServer
             catch (Exception ex)
             {
                 Console.WriteLine("tcp 462" + ex.Message);
-                RemoveOnLine(socket);
+                Program.removeOnlineTcpRelation(socket);
             }
 
         }

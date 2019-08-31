@@ -103,46 +103,62 @@ namespace TcpUdpServer
         public static MacTcpUdp GetRelation(Socket device)
         {
             MacTcpUdp value = null;
-            //lock (locker)
-            //{
-                
-            //}
-
-            var target = (IPEndPoint)device.RemoteEndPoint;
-            foreach (var key in macRelation.Keys)
+            lock (locker)
             {
-                var item = macRelation[key];
-                if (item != null && item.device != null)
-                {
-                    var d = item.device;
-                    try
-                    {
-                        var ipEnd = (IPEndPoint)d.RemoteEndPoint;
-                        if (ipEnd != null && target.Address.Equals(ipEnd.Address) && target.Port.Equals(ipEnd.Port))
-                        {
-                            value = macRelation[key];
-                            value.mac = key;
-                            break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        //180.155.69.150    486    异常：112无法访问已释放的对象。
-                        if (d.Connected)
-                        {
-                            var _msg = "异常：112" + ex.Message + "是否链接" + d.Connected;
-                            LogHelper.Info(_msg, device);
-                            removeOnlineTcpRelation(d);
-                        }
-                        return null;
-
-                    }
-
-
-                }
+               
+               
+               
+               
 
             }
-            return value;
+
+            try
+            {
+                var target = (IPEndPoint)device.RemoteEndPoint;
+                foreach (var key in macRelation.Keys)
+                {
+                    var item = macRelation[key];
+                    if (item != null && item.device != null)
+                    {
+                        var d = item.device;
+                        try
+                        {
+                            var ipEnd = (IPEndPoint)d.RemoteEndPoint;
+                            if (ipEnd != null && target.Address.Equals(ipEnd.Address) && target.Port.Equals(ipEnd.Port))
+                            {
+                                value = macRelation[key];
+                                value.mac = key;
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            //180.155.69.150    486    异常：112无法访问已释放的对象。
+                            if (d.Connected)
+                            {
+                                var _msg = "异常：112" + ex.Message + "是否链接" + d.Connected;
+                                LogHelper.Info(_msg, device);
+                                removeOnlineTcpRelation(d);
+                            }
+                            return null;
+
+                        }
+
+
+                    }
+
+                }
+                return value;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Info("PC:148" + ex.Message);
+                return null;
+            }
+
+
+
+
 
 
 
@@ -157,25 +173,39 @@ namespace TcpUdpServer
                 try
                 {
 
-
+                    LogHelper.Info("移除设备的获取设备方法");
                     var mu = GetRelation(device);
                     if (mu != null && !string.IsNullOrEmpty(mu.mac))
                     {
                         macRelation.Remove(mu.mac);
+                        var _rm = (IPEndPoint)device.RemoteEndPoint;
+                        var _msg = "移除" + _rm.Address + " " + _rm.Port;
+                        LogHelper.Info(_msg);
+                        LogHelper.Info("未查询到mac");
+                        if (device.Connected)
+                        {
+
+
+                        }
+                        device.Shutdown(SocketShutdown.Both);
+                        device.Disconnect(true);
+                        device.Close();
                     }
-                    var _rm = (IPEndPoint)device.RemoteEndPoint;
-                    var _msg = "移除" + _rm.Address + " " + _rm.Port;
-                    device.Shutdown(SocketShutdown.Both);
-                    device.Disconnect(true);
-                    device.Close();
-                    LogHelper.Info(_msg);
+                   
+
                 }
                 catch (Exception ex)
                 {
                     //LogHelper.Loginfo.Info("移除设备时异常:"+ex.Message);
                     //Console.WriteLine("142" + ex.Message);
 
-                    LogHelper.Info("异常:NO.156     " + ex.Message, device);
+
+
+                    //                 at System.Net.Sockets.Socket.get_RemoteEndPoint()
+                    //at TcpUdpServer.Program.GetRelation(Socket device) in C: \Users\json\Source\Repos\TcpUdpServer\Program.cs:line 111
+                    //at TcpUdpServer.Program.removeOnlineTcpRelation(Socket device) in C: \Users\json\Source\Repos\TcpUdpServer\Program.cs:line 161
+
+                    LogHelper.Info("异常:NO.156     " + ex.Message+"   "+ex.StackTrace, device);
                 }
 
 
@@ -186,11 +216,11 @@ namespace TcpUdpServer
 
 
 
-        //const string ipaddress = "192.168.1.8";
+        const string ipaddress = "192.168.1.207";
 
         const int tcpPort = 4198;
         const int udpPort = 4530;
-        const string ipaddress = "115.29.231.29";
+        /// const string ipaddress = "115.29.231.29";
         static void Main(string[] args)
         {
             try
