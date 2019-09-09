@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpUdpServer", "TcpUdpServe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoDevice", "..\DemoDevice\DemoDevice.csproj", "{DD20F06A-32F6-4E0C-A50E-623C568AEB8F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Watch", "..\Watch\Watch.csproj", "{C09D272F-03DC-4F1E-996F-618E5C075787}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{DD20F06A-32F6-4E0C-A50E-623C568AEB8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD20F06A-32F6-4E0C-A50E-623C568AEB8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD20F06A-32F6-4E0C-A50E-623C568AEB8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C09D272F-03DC-4F1E-996F-618E5C075787}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C09D272F-03DC-4F1E-996F-618E5C075787}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C09D272F-03DC-4F1E-996F-618E5C075787}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C09D272F-03DC-4F1E-996F-618E5C075787}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -49,8 +49,11 @@ namespace TcpUdpServer
                 catch (SocketException se)
                 {
                     var _msg = "异常：UDP No:38   socket 异常" + se.ErrorCode + "    " + se.Message;
-                    LogHelper.Info(_msg);
-                    // Environment.Exit(0);
+
+                    Func<bool> func1 = () => true;
+                    //var msgx = "UDP:" + "64-----" + se.ErrorCode + "----" + se.Message;
+                    LogHelper.LogFilter(func1, _msg);
+                    Environment.Exit(0);
                 }
 
             }
@@ -87,6 +90,11 @@ namespace TcpUdpServer
                 //var colNumber = stack.ToString();
                 //Console.WriteLine("1512" + colNumber);
 
+
+                Func<bool> func1 = () => true;
+                var msgx = "UDP:" + "64-----" + se.ErrorCode + "----" + se.Message;
+                LogHelper.LogFilter(func1, msgx);
+
             }
         }
 
@@ -105,14 +113,21 @@ namespace TcpUdpServer
                 }
                 else
                 {
-                    Program.removeOnlineTcpRelation(st);
+                    var ipe = (IPEndPoint)st.RemoteEndPoint;
+                    var address = ipe.Address.ToString();
+                    var port = ipe.Port;
+                    Program.removeOnlineTcpRelation(address, port);
+                   
                 }
 
             }
             catch (SocketException se)
             {
                 var _msg = "101异常:" + se.ErrorCode + "     " + se.Message;
-                Program.removeOnlineTcpRelation(st);
+                var ipe = (IPEndPoint)st.RemoteEndPoint;
+                var address = ipe.Address.ToString();
+                var port = ipe.Port;
+                Program.removeOnlineTcpRelation(address, port);
                 LogHelper.Info(_msg);
 
             }
@@ -147,13 +162,16 @@ namespace TcpUdpServer
 
                     var cmdValueData = findKeyValue.key_value[0];
                     var str = TianMao.GetOrgMsg(cmdValueData.a, cmdValueData.b, cmdValueData.value);
-
+                    var cmdbyte = StrHelper.strToHexByte(str);
                     //var repeatCount = cmd.repeatCount==0?1:cmd.repeatCount;
                     // 0表示红外遥控  1表示射频遥控， 2表示空调红外
                     for (var i = 0; i < repeatCount; i++)
                     {
                         Console.WriteLine("即将发送命令：" + str);
-                        var cmdbyte = StrHelper.strToHexByte(str);
+
+                        Func<bool> func =()=> true;
+
+                        LogHelper.LogFilter(func, "发送命令:" + str);
                         //var state = new List<IPEndPointState>();
                         //dicMacCmd[feidiemac] = point;
                         SendDataToDevice(device, cmdbyte);
@@ -163,6 +181,7 @@ namespace TcpUdpServer
                             Thread.Sleep(1000);
                         }
                     }
+                    break;
 
                 }
             }
@@ -174,39 +193,39 @@ namespace TcpUdpServer
 
 
 
-        private void TurnOnMethod(int protocol_type, EndPoint point, Socket udpServer, string feidiemac, List<MYKMessage> ykMessages, string[] findValue)
+        private void TurnOnMethod(int protocol_type, EndPoint point, Socket device, string feidiemac, List<MYKMessage> ykMessages, string[] findValue)
         {
             if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
             {
                 //var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                UdpServerPoint up = new UdpServerPoint();
-                up.point = (IPEndPoint)point;
-                up.uServer = udpServer;
-                RepeatCmd(ykMessages, 1, udpServer, findValue);
+                //UdpServerPoint up = new UdpServerPoint();
+                //up.point = (IPEndPoint)point;
+                //up.uServer = udpServer;
+                RepeatCmd(ykMessages, 1, device, findValue);
             }
             else if (protocol_type == 0 || protocol_type == (int)Protocol_Type.有线电视盒)
             {
                 //var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                UdpServerPoint up = new UdpServerPoint();
-                up.point = (IPEndPoint)point;
-                up.uServer = udpServer;
-                RepeatCmd(ykMessages, 1, udpServer, findValue);
+                //UdpServerPoint up = new UdpServerPoint();
+                //up.point = (IPEndPoint)point;
+                //up.uServer = udpServer;
+                RepeatCmd(ykMessages, 1, device, findValue);
             }
             else if (protocol_type == (int)Protocol_Type.灯)
             {
                 //var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                UdpServerPoint up = new UdpServerPoint();
-                up.point = (IPEndPoint)point;
-                up.uServer = udpServer;
-                RepeatCmd(ykMessages, 1, udpServer, findValue);
+                //UdpServerPoint up = new UdpServerPoint();
+                //up.point = (IPEndPoint)point;
+                //up.uServer = udpServer;
+                RepeatCmd(ykMessages, 1, device, findValue);
             }
             else if (protocol_type == (int)Protocol_Type.窗帘)
             {
                 //var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                UdpServerPoint up = new UdpServerPoint();
-                up.point = (IPEndPoint)point;
-                up.uServer = udpServer;
-                RepeatCmd(ykMessages, 1, udpServer, findValue);
+                //UdpServerPoint up = new UdpServerPoint();
+                //up.point = (IPEndPoint)point;
+                //up.uServer = udpServer;
+                RepeatCmd(ykMessages, 1, device, findValue);
             }
 
 
@@ -223,8 +242,12 @@ namespace TcpUdpServer
                 pox.Send(cmdbyte);
 
             }
-            catch
+            catch(SocketException se)
             {
+
+                Func<bool> func1 = () => true;
+                var msgx = "UDP:"+se.Message;
+                LogHelper.LogFilter(func1, msgx);
             }
         }
 
@@ -300,17 +323,6 @@ namespace TcpUdpServer
 
                 EndPoint point = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
 
-
-                Task.Factory.StartNew(() =>
-                {
-
-                  
-
-
-
-
-                });
-
                 try
                 {
                     var len = server.EndReceiveFrom(ar, ref point);
@@ -318,52 +330,92 @@ namespace TcpUdpServer
                     if (len > 0)
                     {
                         string msg = Encoding.UTF8.GetString(bs, 0, len);
-
+                      
+                     
                         if (!string.IsNullOrEmpty(msg))
                         {
-                            var msgMd5 = EncryptHelper.MD5Encoding(msg);
-
-                            //LogHelper.Info("收到UDP消息:"+msg);
-                            if (!RedisHelper<string>.IsKeyExist(msgMd5))
+                            ///喂狗
+                            if (msg.Equals("echo_data"))
                             {
-                                var cmd = JsonHelper<ClientCommand>.GetObject(msg);
-                                if (cmd != null)
+                                var echo_data = Encoding.UTF8.GetBytes(msg);
+                                try
                                 {
-                                    var cmdtype = cmd.commandType;
-                                    var command = cmd.command;
-                                    var value = cmd.value;
+                                    server.SendTo(echo_data, point);
+                                }
+                                catch
+                                {
+
+                                }
+                               
+                            }
+                            ///正常应答
+                            else
+                            {
+                                var msgMd5 = EncryptHelper.MD5Encoding(msg);
+                                //LogHelper.Info("收到UDP消息:"+msg);
+                                if (!RedisHelper<string>.IsKeyExist(msgMd5))
+                                {
+                                    var cmd = JsonHelper<ClientCommand>.GetObject(msg);
                                     if (cmd != null)
                                     {
-                                        var mac = cmd.mac;
-                                        mac = !string.IsNullOrEmpty(mac) ? mac.ToLower() : "";
-                                        var mu = Program.GetRelation(mac);
+                                        var cmdtype = cmd.commandType;
+                                        var command = cmd.command;
+                                        var value = cmd.value;
+                                        var username = cmd.username;
+                                        if (cmd != null)
+                                        {
+                                            var mac = cmd.mac;
+                                            mac = !string.IsNullOrEmpty(mac) ? mac.ToLower() : "";
 
-                                        #region 正常命令
-                                        if (!string.IsNullOrEmpty(mac))
-                                        {                                           
-                                            //Program.upgradeClients(mac, point, server);
-                                            if (mu != null && mu.device != null)
+
+                                            ///筛选日志
+                                            var ipe = (IPEndPoint)point;
+                                            Func<bool> func = () => (!string.IsNullOrEmpty(username) && username.Equals("贝贝") && ipe.Address.ToString().Equals("180.155.69.150") == false && (!string.IsNullOrEmpty(command) && command.StartsWith("01") == false && command.StartsWith("02") == false)) || (!string.IsNullOrEmpty(cmd.Id) && string.IsNullOrEmpty(username));
+                                            LogHelper.LogFilter(func, msg);
+
+
+                                            #region 正常命令
+                                            if (!string.IsNullOrEmpty(mac))
                                             {
-
-                                                if (cmd.sid > 0)
+                                                var mu = Program.GetRelation(mac);
+                                                //Program.upgradeClients(mac, point, server);
+                                                if (mu != null && mu.device != null)
                                                 {
-                                                    var app = string.Empty;
 
-                                                    if (!string.IsNullOrEmpty(app))
+                                                    if (cmd.sid > 0)
                                                     {
-                                                        app = cmd.app.ToLower();
-                                                    }
+                                                        var app = string.Empty;
 
-                                                    var isExists = true;
-                                                    if (app.Equals("yzk"))
-                                                    {
-                                                        isExists = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_IsDeviceExists(cmd.sid + "");
+                                                        if (!string.IsNullOrEmpty(app))
+                                                        {
+                                                            app = cmd.app.ToLower();
+                                                        }
+
+                                                        var isExists = true;
+                                                        if (app.Equals("yzk"))
+                                                        {
+                                                            isExists = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_IsDeviceExists(cmd.sid + "");
+                                                        }
+                                                        else if (app.Equals("hdl"))
+                                                        {
+                                                            isExists = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_IsHDLDeviceExists(cmd.sid + "");
+                                                        }
+                                                        if (isExists)
+                                                        {
+                                                            var cmdbytes = StrHelper.strToHexByte(cmd.command);
+                                                            ///给设备发送命令
+                                                            LogHelper.Info("给设备发送命令：" + cmd.command, mu.device);
+                                                            Program.upgradeClients(mac, point, server);
+                                                            SendDataToDevice(mu.device, cmdbytes);
+                                                        }
+                                                        else
+                                                        {
+                                                            ///通知设备已删除
+                                                            NotInline(server, point, mac, cmdtype, "设备已删除");
+                                                        }
+
                                                     }
-                                                    else if (app.Equals("hdl"))
-                                                    {
-                                                        isExists = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_IsHDLDeviceExists(cmd.sid + "");
-                                                    }
-                                                    if (isExists)
+                                                    else
                                                     {
                                                         var cmdbytes = StrHelper.strToHexByte(cmd.command);
                                                         ///给设备发送命令
@@ -371,92 +423,32 @@ namespace TcpUdpServer
                                                         Program.upgradeClients(mac, point, server);
                                                         SendDataToDevice(mu.device, cmdbytes);
                                                     }
-                                                    else
-                                                    {
-                                                        ///通知设备已删除
-                                                        NotInline(server, point, mac, cmdtype, "设备已删除");
-                                                    }
+
 
                                                 }
-                                                else if (!string.IsNullOrEmpty(cmd.Id))
+                                                else
                                                 {
-                                                    var device_info = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_GetDataByRecordid(cmd.Id);
-                                                    if (device_info != null)
+                                                    ///通知设备未上线
+                                                    NotInline(server, point, mac, cmdtype);
+                                                }
+                                            }
+                                            else if (!string.IsNullOrEmpty(cmd.Id))
+                                            {
+                                                var device_info = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_GetDataByRecordid(cmd.Id);
+                                                if (device_info != null)
+                                                {
+                                                    mac = device_info.device_mac;
+
+                                                    var mu = Program.GetRelation(mac);
+
+                                                    ///判断是否是中央空调
+                                                    var isAir = checkIsCenterAirCondition(device_info);
+                                                    #region 485设备
+                                                    if (isAir == 1)
                                                     {
-                                                        mac = device_info.device_mac;
-                                                        ///判断是否是中央空调
-                                                        var isAir = checkIsCenterAirCondition(device_info);
-                                                        #region 485设备
-                                                        if (isAir == 1)
-                                                        {
-                                                            var modbus_address = device_info.modbus_address;
+                                                        var modbus_address = device_info.modbus_address;
 
-                                                            if (!string.IsNullOrEmpty(modbus_address))
-                                                            {
-                                                                var isCmdExists = DALAirCondtionCmd.IsCmdExists(cmd.Id);
-                                                                var preCode = string.Empty;
-                                                                if (isCmdExists)
-                                                                {
-                                                                    var cmddata = DALAirCondtionCmd.GetByDeviceId(cmd.Id);
-                                                                    if (cmddata != null && !string.IsNullOrEmpty(cmddata.cmd))
-                                                                    {
-                                                                        preCode = cmddata.cmd;
-                                                                    }
-                                                                }
-                                                                var strToSend = string.Empty;
-                                                                if (command.Equals("TurnOn"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.TurnOn, cmd.value, preCode);
-                                                                }
-                                                                else if (command.Equals("TurnOff"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.TurnOff, cmd.value, preCode);
-                                                                }
-                                                                else if (command.Equals("AdjustUpTemperature"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.AdjustUpTemperature, cmd.value, preCode);
-                                                                }
-                                                                else if (command.Equals("AdjustDownTemperature"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.AdjustDownTemperature, cmd.value, preCode);
-                                                                }
-                                                                else if (command.Equals("SetTemperature"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.SetTemperature, cmd.value, preCode);
-                                                                }
-                                                                else if (command.Equals("SetMode"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.SetMode, cmd.value, preCode);
-                                                                }
-                                                                ///设置风速
-                                                                else if (command.Equals("SetWindSpeed"))
-                                                                {
-                                                                    strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.SetWindSpeed, cmd.value, preCode);
-                                                                }
-                                                                Console.WriteLine(" 中央空调:" + strToSend);
-                                                                if (!string.IsNullOrEmpty(strToSend))
-                                                                {
-                                                                    if (!command.Equals("TurnOn") && !command.Equals("TurnOff"))
-                                                                    {
-                                                                        DALAirCondtionCmd.addOrUpdateCmd(new AirCondtionCmd()
-                                                                        {
-                                                                            cmd = strToSend,
-                                                                            deviceId = cmd.Id
-                                                                        });
-                                                                    }
-                                                                    SendAirConditionCode(strToSend, mu.device);
-                                                                }
-
-
-                                                            }
-                                                        }
-
-
-                                                        #endregion
-
-                                                        #region  忆林设备
-                                                        ///忆林温控器
-                                                        else if (isAir == 2)
+                                                        if (!string.IsNullOrEmpty(modbus_address))
                                                         {
                                                             var isCmdExists = DALAirCondtionCmd.IsCmdExists(cmd.Id);
                                                             var preCode = string.Empty;
@@ -468,42 +460,42 @@ namespace TcpUdpServer
                                                                     preCode = cmddata.cmd;
                                                                 }
                                                             }
-                                                            Console.WriteLine("msg:" + msg);
                                                             var strToSend = string.Empty;
                                                             if (command.Equals("TurnOn"))
                                                             {
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.TurnOn, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.TurnOn, cmd.value, preCode);
                                                             }
                                                             else if (command.Equals("TurnOff"))
                                                             {
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.TurnOff, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.TurnOff, cmd.value, preCode);
                                                             }
                                                             else if (command.Equals("AdjustUpTemperature"))
                                                             {
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.AdjustUpTemperature, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.AdjustUpTemperature, cmd.value, preCode);
                                                             }
                                                             else if (command.Equals("AdjustDownTemperature"))
                                                             {
-                                                                Console.WriteLine("降低空调温度");
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.AdjustDownTemperature, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.AdjustDownTemperature, cmd.value, preCode);
                                                             }
                                                             else if (command.Equals("SetTemperature"))
                                                             {
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.SetTemperature, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.SetTemperature, cmd.value, preCode);
                                                             }
                                                             else if (command.Equals("SetMode"))
                                                             {
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.SetMode, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.SetMode, cmd.value, preCode);
                                                             }
                                                             ///设置风速
                                                             else if (command.Equals("SetWindSpeed"))
                                                             {
-                                                                strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.SetWindSpeed, cmd.value, preCode);
+                                                                strToSend = AirConditionSend.CenterAirCode(modbus_address, CommandMode.SetWindSpeed, cmd.value, preCode);
                                                             }
-                                                            Console.WriteLine("中央空调忆林:" + strToSend);
+                                                            LogHelper.Info(" 中央空调:" + strToSend);
                                                             if (!string.IsNullOrEmpty(strToSend))
                                                             {
-                                                                mac = device_info.device_mac;
+
+                                                                Program.upgradeClients(mac, point, server);
+
                                                                 if (!command.Equals("TurnOn") && !command.Equals("TurnOff"))
                                                                 {
                                                                     DALAirCondtionCmd.addOrUpdateCmd(new AirCondtionCmd()
@@ -517,325 +509,407 @@ namespace TcpUdpServer
 
 
                                                         }
+                                                    }
+
+
+                                                    #endregion
+
+                                                    #region  忆林设备
+                                                    ///忆林温控器
+                                                    else if (isAir == 2)
+                                                    {
 
 
 
-
-                                                        #endregion
-
-
-                                                        #region  天猫精灵
-
-                                                        else
+                                                        var isCmdExists = DALAirCondtionCmd.IsCmdExists(cmd.Id);
+                                                        var preCode = string.Empty;
+                                                        if (isCmdExists)
                                                         {
-                                                            //var device_info = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_GetDataByRecordid(cmd.Id);
-                                                            if (device_info != null)
+                                                            var cmddata = DALAirCondtionCmd.GetByDeviceId(cmd.Id);
+                                                            if (cmddata != null && !string.IsNullOrEmpty(cmddata.cmd))
                                                             {
-                                                                var bxk_label = device_info.bxk_label;
-                                                                var home_id = device_info.home_id;
-                                                                var device_mac = device_info.device_mac;
-
-                                                                ///判断是否是中央空调
-                                                                var isCenterAirCondition = checkIsCenterAirCondition(device_info);
-                                                                var lx = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_GetXiaoFeiDie(home_id, 64, "3", bxk_label);
-                                                                if (lx != null && lx.Count > 0)
-                                                                {
-                                                                    ///小飞碟mac
-                                                                    var feidiemac = lx[0].device_mac.ToLower();
-                                                                    Console.WriteLine("查到小飞碟mac:" + feidiemac);
-                                                                    if (!string.IsNullOrEmpty(feidiemac))
-                                                                    {
-
-                                                                        Program.upgradeClients(feidiemac, point, server);
-
-                                                                        if (mu != null && mu.device != null)
-                                                                            if (cmdtype == (int)COMMANDTYPE.TMJL)
-                                                                            {
-                                                                                var protocol_type = cmd.protocol_type;
-                                                                                var ykMessages = JsonHelper<List<MYKMessage>>.GetObject(device_info.ykmessageStr);
-                                                                                if (ykMessages != null)
-                                                                                {
-
-                                                                                    ///开机
-                                                                                    if (command.Equals("TurnOn"))
-                                                                                    {
-                                                                                        if (protocol_type == (int)Protocol_Type.空调)
-                                                                                        {
-                                                                                            KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.TurnOn, value, mu.device);
-                                                                                        }
-                                                                                        else
-                                                                                        {
-                                                                                            var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                                                                                            TurnOnMethod(protocol_type, point, server, mac, ykMessages, findValue);
-                                                                                        }
-
-                                                                                    }
-                                                                                    ////关机
-                                                                                    else if (command.Equals("TurnOff"))
-                                                                                    {
-
-                                                                                        if (protocol_type == (int)Protocol_Type.空调)
-                                                                                        {
-                                                                                            KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.TurnOff, value, mu.device);
-                                                                                        }
-                                                                                        else
-                                                                                        {
-                                                                                            var findValue = "电源,关".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                                                                                            TurnOnMethod(protocol_type, point, server, mac, ykMessages, findValue);
-                                                                                        }
-
-
-
-                                                                                    }
-                                                                                    ///调高温度
-                                                                                    else if (command.Equals("AdjustUpTemperature"))
-                                                                                    {
-                                                                                        var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.AdjustUpTemperature, value, mu.device);
-
-
-                                                                                    }
-                                                                                    else if (command.Equals("AdjustDownTemperature"))
-                                                                                    {
-                                                                                        var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.AdjustDownTemperature, value, mu.device);
-
-
-                                                                                    }
-                                                                                    else if (command.Equals("SetTemperature"))
-                                                                                    {
-                                                                                        if (protocol_type == (int)Protocol_Type.空调)
-                                                                                        {
-                                                                                            var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.SetTemperature, value, mu.device);
-
-                                                                                        }
-
-                                                                                    }
-                                                                                    else if (command.Equals("SetMode"))
-                                                                                    {
-                                                                                        if (protocol_type == (int)Protocol_Type.空调)
-                                                                                        {
-                                                                                            var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.SetMode, value, mu.device);
-
-                                                                                        }
-
-                                                                                    }
-
-                                                                                    ///选台
-                                                                                    else if (command.Equals("SelectChannel"))
-                                                                                    {
-
-                                                                                    }
-                                                                                    ///上一台
-                                                                                    else if (command.Equals("AdjustUpChannel"))
-                                                                                    {
-
-                                                                                    }
-                                                                                    else if (command.Equals("AdjustDownChannel"))
-                                                                                    {
-
-                                                                                    }
-                                                                                    else if (command.Equals("AdjustUpVolume"))
-                                                                                    {
-                                                                                        if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
-                                                                                        {
-                                                                                            var repeatCount = 5;
-                                                                                            var findValue = "音量+";
-                                                                                            RepeatCmd(ykMessages, repeatCount, mu.device, findValue);
-
-                                                                                        }
-
-
-                                                                                    }
-                                                                                    else if (command.Equals("AdjustDownVolume"))
-                                                                                    {
-
-                                                                                        if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
-                                                                                        {
-                                                                                            var repeatCount = 5;
-                                                                                            var findValue = "音量-";
-                                                                                            RepeatCmd(ykMessages, repeatCount, mu.device, findValue);
-                                                                                        }
-
-
-
-                                                                                    }
-                                                                                    else if (command.Equals("SetWindSpeed"))
-                                                                                    {
-                                                                                        if (protocol_type == (int)Protocol_Type.空调)
-                                                                                        {
-
-                                                                                        }
-                                                                                    }
-                                                                                    else if (command.Equals("AdjustDownVolume"))
-                                                                                    {
-
-                                                                                    }
-                                                                                    ///静音
-                                                                                    else if (command.Equals("SetMute"))
-                                                                                    {
-                                                                                    }
-                                                                                    ///暂停
-                                                                                    else if (command.Equals("Pause"))
-                                                                                    {
-                                                                                        if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
-                                                                                        {
-                                                                                            var findValue = "暂停";
-
-                                                                                            RepeatCmd(ykMessages, 1, mu.device, findValue);
-                                                                                        }
-                                                                                        else if (protocol_type == (int)Protocol_Type.灯)
-                                                                                        {
-                                                                                            var findValue = "暂停";
-                                                                                            UdpServerPoint up = new UdpServerPoint();
-                                                                                            RepeatCmd(ykMessages, 1, mu.device, findValue);
-                                                                                        }
-                                                                                        else if (protocol_type == (int)Protocol_Type.窗帘)
-                                                                                        {
-                                                                                            var findValue = "暂停";
-                                                                                            RepeatCmd(ykMessages, 1, mu.device, findValue);
-                                                                                        }
-
-                                                                                    }
-                                                                                    ///继续
-                                                                                    else if (command.Equals("Continue"))
-                                                                                    {
-
-                                                                                    }
-                                                                                    ///调高亮度
-                                                                                    else if (command.Equals("AdjustUpBrightness"))
-                                                                                    {
-                                                                                    }
-                                                                                    ///调低亮度
-                                                                                    else if (command.Equals("AdjustDownBrightness"))
-                                                                                    {
-                                                                                    }
-
-                                                                                }
-                                                                            }
-                                                                            else
-                                                                            {
-
-                                                                                if (mu != null && mu.device != null)
-                                                                                {
-                                                                                    try
-                                                                                    {
-                                                                                        var cmdbytes = StrHelper.strToHexByte(cmd.command);
-                                                                                        mu.device.Send(cmdbytes);
-                                                                                    }
-                                                                                    catch(Exception ex)
-                                                                                    {
-                                                                                        LogHelper.Info("UDP:717发送给设备异常:" + ex.Message);
-
-                                                                                    }
-
-                                                                                }
-
-
-
-                                                                            }
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        Console.WriteLine("小飞碟mac有误");
-                                                                    }
-
-                                                                }
-                                                                else
-                                                                {
-                                                                    #region  未找到小飞碟
-                                                                    var bdata = Encoding.UTF8.GetBytes(JsonHelper<Status<string>>.GetJson(new Status<string>() { code = "0", data = "", mac = mac, msg = "未找到小飞碟", commandType = cmdtype + "" }));
-                                                                    try
-                                                                    {
-                                                                        server.SendTo(bdata, point);
-                                                                    }
-                                                                    catch
-                                                                    {
-
-                                                                    }
-                                                                    #endregion
-                                                                }
-
+                                                                preCode = cmddata.cmd;
                                                             }
                                                         }
+                                                        Console.WriteLine("msg:" + msg);
+                                                        var strToSend = string.Empty;
+                                                        if (command.Equals("TurnOn"))
+                                                        {
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.TurnOn, cmd.value, preCode);
+                                                        }
+                                                        else if (command.Equals("TurnOff"))
+                                                        {
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.TurnOff, cmd.value, preCode);
+                                                        }
+                                                        else if (command.Equals("AdjustUpTemperature"))
+                                                        {
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.AdjustUpTemperature, cmd.value, preCode);
+                                                        }
+                                                        else if (command.Equals("AdjustDownTemperature"))
+                                                        {
+                                                            Console.WriteLine("降低空调温度");
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.AdjustDownTemperature, cmd.value, preCode);
+                                                        }
+                                                        else if (command.Equals("SetTemperature"))
+                                                        {
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.SetTemperature, cmd.value, preCode);
+                                                        }
+                                                        else if (command.Equals("SetMode"))
+                                                        {
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.SetMode, cmd.value, preCode);
+                                                        }
+                                                        ///设置风速
+                                                        else if (command.Equals("SetWindSpeed"))
+                                                        {
+                                                            strToSend = AirConditionSend.CenterAirCodeYiLin(CommandMode.SetWindSpeed, cmd.value, preCode);
+                                                        }
+                                                        LogHelper.Info("中央空调忆林:" + strToSend);
+                                                        if (!string.IsNullOrEmpty(strToSend))
+                                                        {
+
+                                                            mac = device_info.device_mac;
+
+                                                            Program.upgradeClients(mac, point, server);
+
+                                                            if (!command.Equals("TurnOn") && !command.Equals("TurnOff"))
+                                                            {
+                                                                DALAirCondtionCmd.addOrUpdateCmd(new AirCondtionCmd()
+                                                                {
+                                                                    cmd = strToSend,
+                                                                    deviceId = cmd.Id
+                                                                });
+                                                            }
+
+                                                            LogHelper.Info("忆林发送设备:" + strToSend, mu.device);
 
 
-                                                        #endregion
+
+                                                            SendAirConditionCode(strToSend, mu.device);
+                                                        }
+
 
                                                     }
 
 
+
+
+                                                    #endregion
+
+
+                                                    #region  天猫精灵
+
+                                                    else
+                                                    {
+                                                        //var device_info = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_GetDataByRecordid(cmd.Id);
+                                                        if (device_info != null)
+                                                        {
+                                                            var bxk_label = device_info.bxk_label;
+                                                            var home_id = device_info.home_id;
+                                                            var device_mac = device_info.device_mac;
+
+
+                                                            ///判断是否是中央空调
+                                                            var isCenterAirCondition = checkIsCenterAirCondition(device_info);
+                                                            var lx = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_GetXiaoFeiDie(home_id, 64, "3", bxk_label);
+                                                            if (lx != null && lx.Count > 0)
+                                                            {
+                                                                ///小飞碟mac
+                                                                var feidiemac = lx[0].device_mac.ToLower();
+                                                                Console.WriteLine("查到小飞碟mac:" + feidiemac);
+                                                                Program.upgradeClients(feidiemac, point, server);
+
+
+                                                                if (!string.IsNullOrEmpty(feidiemac))
+                                                                {
+
+                                                                    mu = Program.GetRelation(feidiemac);
+
+
+                                                                    if (mu != null && mu.device != null)
+                                                                        if (cmdtype == (int)COMMANDTYPE.TMJL)
+                                                                        {
+                                                                            var protocol_type = cmd.protocol_type;
+                                                                            var ykMessages = JsonHelper<List<MYKMessage>>.GetObject(device_info.ykmessageStr);
+                                                                            if (ykMessages != null)
+                                                                            {
+
+                                                                                LogHelper.Info(string.Format("天猫精灵-----  Id:{0}  mac:{1}  内容:{2} ", cmd.Id, feidiemac, device_info.ykmessageStr), mu.device);
+                                                                                ///开机
+                                                                                if (command.Equals("TurnOn"))
+                                                                                {
+                                                                                    if (protocol_type == (int)Protocol_Type.空调)
+                                                                                    {
+                                                                                        KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.TurnOn, value, mu.device);
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                                                                                        TurnOnMethod(protocol_type, point, mu.device, mac, ykMessages, findValue);
+                                                                                    }
+
+                                                                                }
+                                                                                ////关机
+                                                                                else if (command.Equals("TurnOff"))
+                                                                                {
+
+                                                                                    if (protocol_type == (int)Protocol_Type.空调)
+                                                                                    {
+                                                                                        KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.TurnOff, value, mu.device);
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        var findValue = "电源,关".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                                                                                        TurnOnMethod(protocol_type, point, mu.device, mac, ykMessages, findValue);
+                                                                                    }
+
+
+
+                                                                                }
+                                                                                ///调高温度
+                                                                                else if (command.Equals("AdjustUpTemperature"))
+                                                                                {
+                                                                                    var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.AdjustUpTemperature, value, mu.device);
+
+
+                                                                                }
+                                                                                else if (command.Equals("AdjustDownTemperature"))
+                                                                                {
+                                                                                    var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.AdjustDownTemperature, value, mu.device);
+
+
+                                                                                }
+                                                                                else if (command.Equals("SetTemperature"))
+                                                                                {
+                                                                                    if (protocol_type == (int)Protocol_Type.空调)
+                                                                                    {
+                                                                                        var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.SetTemperature, value, mu.device);
+
+                                                                                    }
+
+                                                                                }
+                                                                                else if (command.Equals("SetMode"))
+                                                                                {
+                                                                                    if (protocol_type == (int)Protocol_Type.空调)
+                                                                                    {
+                                                                                        var hasSend = KongTiaoCmd(cmd.Id, feidiemac, protocol_type, ykMessages, CommandMode.SetMode, value, mu.device);
+
+                                                                                    }
+
+                                                                                }
+
+                                                                                ///选台
+                                                                                else if (command.Equals("SelectChannel"))
+                                                                                {
+
+                                                                                }
+                                                                                ///上一台
+                                                                                else if (command.Equals("AdjustUpChannel"))
+                                                                                {
+
+                                                                                }
+                                                                                else if (command.Equals("AdjustDownChannel"))
+                                                                                {
+
+                                                                                }
+                                                                                else if (command.Equals("AdjustUpVolume"))
+                                                                                {
+                                                                                    if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
+                                                                                    {
+                                                                                        var repeatCount = 5;
+                                                                                        var findValue = "音量+";
+                                                                                        RepeatCmd(ykMessages, repeatCount, mu.device, findValue);
+
+                                                                                    }
+
+
+                                                                                }
+                                                                                else if (command.Equals("AdjustDownVolume"))
+                                                                                {
+
+                                                                                    if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
+                                                                                    {
+                                                                                        var repeatCount = 5;
+                                                                                        var findValue = "音量-";
+                                                                                        RepeatCmd(ykMessages, repeatCount, mu.device, findValue);
+                                                                                    }
+
+
+
+                                                                                }
+                                                                                else if (command.Equals("SetWindSpeed"))
+                                                                                {
+                                                                                    if (protocol_type == (int)Protocol_Type.空调)
+                                                                                    {
+
+                                                                                    }
+                                                                                }
+                                                                                else if (command.Equals("AdjustDownVolume"))
+                                                                                {
+
+                                                                                }
+                                                                                ///静音
+                                                                                else if (command.Equals("SetMute"))
+                                                                                {
+                                                                                }
+                                                                                ///暂停
+                                                                                else if (command.Equals("Pause"))
+                                                                                {
+                                                                                    if (protocol_type == 0 || protocol_type == (int)Protocol_Type.电视机)
+                                                                                    {
+                                                                                        var findValue = "暂停";
+
+                                                                                        RepeatCmd(ykMessages, 1, mu.device, findValue);
+                                                                                    }
+                                                                                    else if (protocol_type == (int)Protocol_Type.灯)
+                                                                                    {
+                                                                                        var findValue = "暂停";
+                                                                                        UdpServerPoint up = new UdpServerPoint();
+                                                                                        RepeatCmd(ykMessages, 1, mu.device, findValue);
+                                                                                    }
+                                                                                    else if (protocol_type == (int)Protocol_Type.窗帘)
+                                                                                    {
+                                                                                        var findValue = "暂停";
+                                                                                        RepeatCmd(ykMessages, 1, mu.device, findValue);
+                                                                                    }
+
+                                                                                }
+                                                                                ///继续
+                                                                                else if (command.Equals("Continue"))
+                                                                                {
+
+                                                                                }
+                                                                                ///调高亮度
+                                                                                else if (command.Equals("AdjustUpBrightness"))
+                                                                                {
+                                                                                }
+                                                                                ///调低亮度
+                                                                                else if (command.Equals("AdjustDownBrightness"))
+                                                                                {
+                                                                                }
+
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+
+                                                                            if (mu != null && mu.device != null)
+                                                                            {
+                                                                                try
+                                                                                {
+                                                                                    var cmdbytes = StrHelper.strToHexByte(cmd.command);
+                                                                                    mu.device.Send(cmdbytes);
+                                                                                }
+                                                                                catch (Exception ex)
+                                                                                {
+                                                                                    LogHelper.Info("UDP:717发送给设备异常:" + ex.Message);
+                                                                                    Func<bool> func1 = () => true;
+                                                                                    var msgx = "UDP:717发送给设备异常:" + ex.Message;
+                                                                                    LogHelper.LogFilter(func1, msgx);
+
+                                                                                }
+
+                                                                            }
+
+
+
+                                                                        }
+                                                                }
+                                                                else
+                                                                {
+                                                                    Console.WriteLine("小飞碟mac有误");
+                                                                }
+
+                                                            }
+                                                            else
+                                                            {
+                                                                #region  未找到小飞碟
+                                                                var bdata = Encoding.UTF8.GetBytes(JsonHelper<Status<string>>.GetJson(new Status<string>() { code = "0", data = "", mac = mac, msg = "未找到小飞碟", commandType = cmdtype + "" }));
+                                                                try
+                                                                {
+                                                                    server.SendTo(bdata, point);
+                                                                }
+                                                                catch (SocketException ex)
+                                                                {
+                                                                    LogHelper.Info("未找转发器异常:" + ex.Message);
+
+
+                                                                    Func<bool> func1 = () => true;
+                                                                    var msgx = "UDP:800未找转发器异常:" + ex.Message;
+                                                                    LogHelper.LogFilter(func1, msgx);
+                                                                }
+                                                                #endregion
+                                                            }
+
+                                                        }
+                                                    }
+
+
+                                                    #endregion
+
                                                 }
+
+
                                             }
-                                            else
-                                            {
-                                                ///通知设备未上线
-                                                NotInline(server, point, mac, cmdtype);
-                                            }
+
+
+                                            #endregion
                                         }
 
-                                        #endregion
                                     }
-                                   
+
                                 }
+                                RedisHelper<string>.StoreOneKeyMilliseconds(msgMd5, "1", 500);
 
                             }
 
 
 
-                            RedisHelper<string>.StoreOneKeyMilliseconds(msgMd5, "1", 1000);
+                           
                         }
 
                     }
                 }
                 catch (SocketException se)
                 {
-                    var _msg = "异常：UDP:752 " + se.ErrorCode + "     " + se.Message;
+                    var _msg = "异常：UDP:752 " + se.ErrorCode + "     " + se.Message+"   "+se.StackTrace;
+
+                    point = ReConnctUDP(server, point);
+                  
+
                     LogHelper.Info(_msg);
+                    return;
                 }
-
-
-
-
-
-                Task.Factory.StartNew(() =>
-                {
-
-                   
-
-                });
-
                 try
                 {
-                    var next = new byte[1024];
-                    UdpData ud = new UdpData
-                    {
-                        socket = server,
-                        data = next
-                    };
-                    var asyncResult = server.BeginReceiveFrom(next, 0, next.Length, SocketFlags.None, ref point, OnUdpRecieve, ud);
+                    point = ReConnctUDP(server, point);
                 }
                 catch (SocketException se)
                 {
                     var _msg = "异常:UDP:769 " + se.ErrorCode + "     " + se.Message;
                     LogHelper.Info(_msg+"异常后是否绑定:"+server.IsBound);
+                    point = ReConnctUDP(server, point);
 
-                    if(!string.IsNullOrEmpty(IPADDRESS)&&UDPPORT>0)
-                    {
-                        UdpStart(IPADDRESS, UDPPORT);
-                    }
-                  
+
+                    Func<bool> func1 = () => true;
+                    var msgx = _msg;
+                    LogHelper.LogFilter(func1, msgx);
+
                 }
-
-
-
-
-
-
-
-
-
             }
 
 
+        }
+
+        private EndPoint ReConnctUDP(Socket server, EndPoint point)
+        {
+            var next = new byte[1024];
+            UdpData ud = new UdpData
+            {
+                socket = server,
+                data = next
+            };
+            server.BeginReceiveFrom(next, 0, next.Length, SocketFlags.None, ref point, OnUdpRecieve, ud);
+            return point;
         }
     }
 }

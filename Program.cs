@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-
+using System.Configuration;
 
 namespace TcpUdpServer
 {
@@ -26,18 +26,24 @@ namespace TcpUdpServer
         {
             lock (locker)
             {
+                var ipEndPort = (IPEndPoint)device.RemoteEndPoint;
                 if (!macRelation.ContainsKey(mac))
                 {
                     macRelation.Add(mac, new MacTcpUdp()
                     {
                         device = device,
-                        mac = mac
+                        mac = mac,
+                        Address = ipEndPort.Address.ToString(),
+                        port = ipEndPort.Port
                     });
                 }
                 else
                 {
                     var mu = macRelation[mac];
                     mu.device = device;
+                    mu.mac = mac;
+                    mu.Address = ipEndPort.Address.ToString();
+                    mu.port = ipEndPort.Port;
                 }
             }
         }
@@ -52,19 +58,22 @@ namespace TcpUdpServer
                     queue.Enqueue(new EndPointTime()
                     {
                         point = client,
-                        time = DateTime.Now
+                        time = DateTime.Now,
+                        
 
                     });
                     macRelation.Add(mac, new MacTcpUdp()
                     {
                         clients = queue,
-                        mac = mac
+                        mac = mac,
+                        udpServer=udpServer
                     });
                 }
                 else
                 {
                     var mu = macRelation[mac];
-                    if (mu.clients.Count < 10)
+                    var count = 1;
+                    if (mu.clients.Count < count)
                     {
                         var db = new EndPointTime();
                         db.point = client;
@@ -74,7 +83,10 @@ namespace TcpUdpServer
                     }
                     else
                     {
-                        mu.clients.Dequeue();
+                        while(mu.clients.Count>=count)
+                        {
+                            mu.clients.Dequeue();
+                        }                    
                         var db = new EndPointTime();
                         db.point = client;
                         db.time = DateTime.Now;
@@ -95,119 +107,94 @@ namespace TcpUdpServer
         /// <returns></returns>
         public static MacTcpUdp GetRelation(string mac)
         {
-            MacTcpUdp value;
-            var bvalue = macRelation.TryGetValue(mac, out value);
+            MacTcpUdp value=null;
+            if (!string.IsNullOrEmpty(mac))
+            {
+                var bvalue = macRelation.TryGetValue(mac, out value);
+
+            }
             return value;
         }
 
-        public static MacTcpUdp GetRelation(Socket device)
+
+
+
+
+
+        public static MacTcpUdp GetRelation(string address, int port)
         {
+            ///throw new Exception("haha");
+          
             MacTcpUdp value = null;
-            lock (locker)
+            ///锁住macRelation
+            lock (macRelation)
             {
-               
-               
-               
-               
-
-            }
-
-            try
-            {
-                var target = (IPEndPoint)device.RemoteEndPoint;
+                
                 foreach (var key in macRelation.Keys)
                 {
-                    var item = macRelation[key];
-                    if (item != null && item.device != null)
+                    try
                     {
-                        var d = item.device;
-                        try
+                        var item = macRelation[key];
+                        if (item.Address.Equals(address) && item.port.Equals(port))
                         {
-                            var ipEnd = (IPEndPoint)d.RemoteEndPoint;
-                            if (ipEnd != null && target.Address.Equals(ipEnd.Address) && target.Port.Equals(ipEnd.Port))
-                            {
-                                value = macRelation[key];
-                                value.mac = key;
-                                break;
-                            }
+                            value = macRelation[key];
+                            value.mac = key;
+                            break;
                         }
-                        catch (Exception ex)
-                        {
-                            //180.155.69.150    486    异常：112无法访问已释放的对象。
-                            if (d.Connected)
-                            {
-                                var _msg = "异常：112" + ex.Message + "是否链接" + d.Connected;
-                                LogHelper.Info(_msg, device);
-                                removeOnlineTcpRelation(d);
-                            }
-                            return null;
-
-                        }
-
-
                     }
+                    catch (Exception ex)
+                    {
 
+                        Func<bool> func = () => true;
+                        LogHelper.LogFilter(func, ex.StackTrace+"    "+ex.Message);
+                        return value;
+
+                       
+                    }
+                   
                 }
                 return value;
             }
-            catch (Exception ex)
-            {
-                LogHelper.Info("PC:148" + ex.Message);
-                return null;
-            }
-
-
-
-
-
-
-
-
+           
         }
 
 
-        public static void removeOnlineTcpRelation(Socket device)
+
+
+
+
+
+
+        public static void removeOnlineTcpRelation(string address, int port)
         {
-            lock (locker)
+            var mu = GetRelation(address, port);
+            if (mu != null && !string.IsNullOrEmpty(mu.mac))
             {
                 try
                 {
-
-                    LogHelper.Info("移除设备的获取设备方法");
-                    var mu = GetRelation(device);
-                    if (mu != null && !string.IsNullOrEmpty(mu.mac))
-                    {
-                        macRelation.Remove(mu.mac);
-                        var _rm = (IPEndPoint)device.RemoteEndPoint;
-                        var _msg = "移除" + _rm.Address + " " + _rm.Port;
-                        LogHelper.Info(_msg);
-                        LogHelper.Info("未查询到mac");
-                        if (device.Connected)
-                        {
-
-
-                        }
-                        device.Shutdown(SocketShutdown.Both);
-                        device.Disconnect(true);
-                        device.Close();
-                    }
-                   
+                    macRelation.Remove(mu.mac);
+                    //var _rm = (IPEndPoint)device.RemoteEndPoint;
+                    var _msg = "移除" + address + " " + port;
+                    LogHelper.Info(_msg);
 
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
-                    //LogHelper.Loginfo.Info("移除设备时异常:"+ex.Message);
-                    //Console.WriteLine("142" + ex.Message);
-
-
-
-                    //                 at System.Net.Sockets.Socket.get_RemoteEndPoint()
-                    //at TcpUdpServer.Program.GetRelation(Socket device) in C: \Users\json\Source\Repos\TcpUdpServer\Program.cs:line 111
-                    //at TcpUdpServer.Program.removeOnlineTcpRelation(Socket device) in C: \Users\json\Source\Repos\TcpUdpServer\Program.cs:line 161
-
-                    LogHelper.Info("异常:NO.156     " + ex.Message+"   "+ex.StackTrace, device);
+                    Func<bool> func=()=>true;
+                    LogHelper.LogFilter(func, ex.StackTrace);
                 }
+               
 
+                try
+                {
+                    mu.device.Shutdown(SocketShutdown.Both);
+                    mu.device.Disconnect(true);
+                    mu.device.Close();
+                }
+                catch (SocketException se)
+                {
+                    Console.WriteLine(se.ErrorCode + " " + se.Message);
+                }
 
             }
         }
@@ -216,13 +203,22 @@ namespace TcpUdpServer
 
 
 
-        const string ipaddress = "192.168.1.207";
+        ///const string ipaddress = "192.168.1.207";
 
         const int tcpPort = 4198;
         const int udpPort = 4530;
-        /// const string ipaddress = "115.29.231.29";
+        //const string ipaddress = "118.25.68.161";
+
+        //const string ipaddress = ConfigurationManager.AppSettings["ipaddress"].ToString();
+
+        ///const string ipaddress = "115.29.231.29";
+
+
+
+        ///const string ipaddress = "121.40.53.77";
         static void Main(string[] args)
         {
+            string ipaddress = ConfigurationManager.AppSettings["ipaddress"].ToString();
             try
             {
                 TUdpServer udpServer = new TUdpServer();

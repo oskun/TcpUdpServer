@@ -64,42 +64,8 @@ namespace TcpUdpServer
         }
 
 
-        /// <summary>
-        /// 移除在线设备
-        /// </summary>
-        /// <param name="socket"></param>
-        private void RemoveOnLine(Socket socket)
-        {
+       
 
-            //Console.WriteLine("---移除设备");
-            Program.removeOnlineTcpRelation(socket);
-            //Console.WriteLine("---移除设备---");
-
-        }
-
-        private bool IsSocketConnected(Socket client)
-        {
-            bool blockingState = client.Blocking;
-            try
-            {
-                byte[] tmp = new byte[1];
-                client.Blocking = false;
-                client.Send(tmp, 0, 0);
-                return false;
-            }
-            catch (SocketException e)
-            {
-                // 产生 10035 == WSAEWOULDBLOCK 错误，说明被阻止了，但是还是连接的
-                if (e.NativeErrorCode.Equals(10035))
-                    return false;
-                else
-                    return true;
-            }
-            finally
-            {
-                client.Blocking = blockingState;    // 恢复状态
-            }
-        }
 
         private void onTcpReceive(IAsyncResult ar)
         {
@@ -118,7 +84,7 @@ namespace TcpUdpServer
                         td = null;
                         var _d = (IPEndPoint)socket.RemoteEndPoint;
                         Console.WriteLine("设备断开" + _d.Address + ":" + _d.Port);
-                        Program.removeOnlineTcpRelation(socket);
+                        Program.removeOnlineTcpRelation(_d.Address.ToString(),_d.Port);
                         ar = null;
                     }
                     else
@@ -132,7 +98,7 @@ namespace TcpUdpServer
 
 
                         //});
-                        if (Info != null)
+                        if (Info != null&&socket!=null)
                         {
 
                             try
@@ -167,6 +133,7 @@ namespace TcpUdpServer
                             }
                             catch (Exception ex)
                             {
+                                // throw ex;
                                 LogHelper.Info("tcp:168" + ex.Message);
                             }
 
@@ -183,20 +150,20 @@ namespace TcpUdpServer
                             else
                             {
                                 LogHelper.Info("TCP 179尝试设备已经断开");
-                                Program.removeOnlineTcpRelation(socket);
+                                var ipe = (IPEndPoint)socket.RemoteEndPoint;
+                                var address = ipe.Address.ToString();
+                                var port = ipe.Port;
+                                Program.removeOnlineTcpRelation(address,port);
                                 ar.AsyncWaitHandle.Close();
                                 LogHelper.Info("设备已经断开");
                             }
-
-
-
-
-
-
                         }
                         catch (Exception ex)
                         {
-                            Program.removeOnlineTcpRelation(socket);
+                            var ipe = (IPEndPoint)socket.RemoteEndPoint;
+                            var address = ipe.Address.ToString();
+                            var port = ipe.Port;
+                            Program.removeOnlineTcpRelation(address, port);
                             Console.WriteLine("tcp 130" + ex.Message);
                             LogHelper.Info("设备已经断开");
                             ar = null;
@@ -211,7 +178,10 @@ namespace TcpUdpServer
                     //var colNumber = stack.ToString();
                     //var ep = (IPEndPoint)socket.RemoteEndPoint;
                     //Console.WriteLine("_tcp:138" + ep.Address + "  " + ep.Port + colNumber);
-                    Program.removeOnlineTcpRelation(socket);
+                    var ipe = (IPEndPoint)socket.RemoteEndPoint;
+                    var address = ipe.Address.ToString();
+                    var port = ipe.Port;
+                    Program.removeOnlineTcpRelation(address, port);
                     ar = null;
                 }
 
@@ -241,10 +211,12 @@ namespace TcpUdpServer
 
             //}
 
-            var mu = Program.GetRelation(socket);
+            var ipe = (IPEndPoint)socket.RemoteEndPoint;
+            var address = ipe.Address.ToString();
+            var port = ipe.Port;
+            var mu = Program.GetRelation(address,port);
             if (mu != null)
             {
-
 
                 #region 长度小于5时等待接下来的数据
                 if (ds.Length < 5)
@@ -298,8 +270,13 @@ namespace TcpUdpServer
                             //Console.WriteLine("后来ds长度:" + ds.Length + "字符串：" + hex);
                             else if (len == 0)
                             {
-                                LogHelper.Info("再次获取的时候居然断开了。。。。");
-                                Program.removeOnlineTcpRelation(socket);
+
+
+                                Func<bool> func1 = () => true;
+                                var msgx ="再次获取的时候居然断开了。。。。";
+                                LogHelper.LogFilter(func1, msgx);
+                             
+                                Program.removeOnlineTcpRelation(address,port);
 
 
                             }
@@ -307,7 +284,7 @@ namespace TcpUdpServer
                         catch (SocketException sek)
                         {
                             Console.WriteLine(sek.Message);
-                            Program.removeOnlineTcpRelation(socket);
+                            Program.removeOnlineTcpRelation(address,port);
                         }
 
 
@@ -359,7 +336,7 @@ namespace TcpUdpServer
                         if (mu.udpServer != null)
                         {
 
-                            LogHelper.Info("返回：" + mac + " 数据" + rdata);
+                            LogHelper.Info("设备mac：" + mac + " 数据" + rdata);
                             var iet = (IPEndPoint)el.point;
                             if (!iet.Address.Equals(IPAddress.Any))
                             {
@@ -386,6 +363,11 @@ namespace TcpUdpServer
                     catch (Exception ex)
                     {
                         Console.WriteLine("TCP:395" + ex.Message);
+
+
+                        Func<bool> func1 = () => true;
+                        var msgx = "TCP:395" + ex.Message;
+                        LogHelper.LogFilter(func1, msgx);
                     }
 
                 }
@@ -592,7 +574,15 @@ namespace TcpUdpServer
             catch (Exception ex)
             {
                 Console.WriteLine("tcp 462" + ex.Message);
-                Program.removeOnlineTcpRelation(socket);
+                var ipe = (IPEndPoint)socket.RemoteEndPoint;
+                var address = ipe.Address.ToString();
+                var port = ipe.Port;
+                Program.removeOnlineTcpRelation(address, port);
+
+
+                Func<bool> func1 = () => true;
+                var msgx = "tcp 462" + ex.Message;
+                LogHelper.LogFilter(func1, msgx);
             }
 
         }
@@ -663,26 +653,41 @@ namespace TcpUdpServer
             //LogWriteLock.ExitWriteLock();
             var ipEnd = (IPEndPoint)pox.RemoteEndPoint;
             var heartBeatKey = "HeartBeat:" + ipEnd.Address.ToString() + "" + ipEnd.Port;
-            var key = "Socket.Tcp.SetTime." + mac;
 
+
+            var key = "Socket.Tcp.SetTime." + mac;
             #region 设置时间
             if (!RedisHelper<string>.IsKeyExist(key))
             {
-                try
-                {
-                    ///60*60*24
-                    RedisHelper<string>.StoreOneKey(key, "1", 86400);
-                    var set_time_str = "55ff00010091010110a1000a0461" + StrHelper.BackTime();
-                    var set_time_bytes = CRC16.CRC_XModem(set_time_str);
-                    pox.Send(set_time_bytes);
-                    Thread.Sleep(50);
-
-                }
-                catch
+             
+                Task.Factory.StartNew(() =>
                 {
 
+                    try
+                    {
+                        ///60*60*24
+                        RedisHelper<string>.StoreOneKey(key, "1", 86400);
+                        var set_time_str = "55ff00010091010110a1000a0461" + StrHelper.BackTime();
+                        var set_time_bytes = CRC16.CRC_XModem(set_time_str);
+                        pox.Send(set_time_bytes);
+                        Thread.Sleep(50);
 
-                }
+                    }
+                    catch(SocketException se)
+                    {
+                       
+
+
+                        Func<bool> func1 = () => true;
+                        var msgx = "TCP:670:" + se.ErrorCode + " " + se.Message;
+                        LogHelper.LogFilter(func1, msgx);
+                    }
+
+
+                });
+
+
+               
 
             }
             #endregion

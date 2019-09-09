@@ -41,5 +41,20 @@ namespace TcpUdpServer
         public Socket udpServer { get; set; }
 
 
+
+
+        /// <summary>
+        /// IP地址
+        /// </summary>
+        public string Address { get; set; }
+
+
+
+        /// <summary>
+        /// 端口号
+        /// </summary>
+        public int port { get; set; }
+
+
     }
 }

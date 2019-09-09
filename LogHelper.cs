@@ -22,28 +22,47 @@ namespace TcpUdpServer
         public static void Info(string message)
         {
             Console.WriteLine(message);
-            logInfo.Info(message);
+            //logInfo.Info(message);
+          
         }
 
 
         public static void Info(string message,Socket socket)
         {
-            if (socket != null && socket.Connected)
-            {
-                var point = (IPEndPoint)socket.RemoteEndPoint;
+            //if (socket != null && socket.Connected)
+            //{
+            //    var point = (IPEndPoint)socket.RemoteEndPoint;
 
-                var msg = point.Address + "    " + point.Port + "    " + message;
-                Console.WriteLine(msg);
+            //    var msg = point.Address + "    " + point.Port + "    " + message;
+            //    Console.WriteLine(msg);
+            //    logInfo.Info(msg);
+
+            //}
+            //else
+            //{
+              
+            //    Console.WriteLine(message);
+            //    logInfo.Info(message);
+            //}
+          
+        }
+
+
+
+
+
+        /// <summary>
+        /// 过滤日志
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="msg"></param>
+        public static void LogFilter(Func<bool> func,string msg)
+        {
+            if (func())
+            {
                 logInfo.Info(msg);
 
             }
-            else
-            {
-              
-                Console.WriteLine(message);
-                logInfo.Info(message);
-            }
-          
         }
 
     }
