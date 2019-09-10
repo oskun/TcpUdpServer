@@ -134,7 +134,7 @@ namespace TcpUdpServer
                             catch (Exception ex)
                             {
                                 // throw ex;
-                                LogHelper.Info("tcp:168" + ex.Message);
+                                LogHelper.Info("tcp:168" + ex.Message+"    "+ex.StackTrace);
                             }
 
                         }

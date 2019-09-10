@@ -198,7 +198,32 @@ namespace TcpUdpServer
 
             }
         }
+        internal static Boolean IsPortOccupedFun2(params Int32[] ports)
+        {
+            Boolean result = false;
+            try
+            {
+                System.Net.NetworkInformation.IPGlobalProperties iproperties = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+                System.Net.IPEndPoint[] ipEndPoints = iproperties.GetActiveTcpListeners();
+                foreach (var item in ipEndPoints)
+                {
+                    foreach (var port in ports)
+                    {
+                        if (item.Port == port)
+                        {
+                            result = true;
+                            return true;
+                        }
+                    }
 
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return result;
+        }
 
 
 
@@ -218,23 +243,30 @@ namespace TcpUdpServer
         ///const string ipaddress = "121.40.53.77";
         static void Main(string[] args)
         {
-            string ipaddress = ConfigurationManager.AppSettings["ipaddress"].ToString();
-            try
-            {
-                TUdpServer udpServer = new TUdpServer();
-                udpServer.UdpStart(ipaddress, udpPort);
 
-                MTcpServer tcpServer = new MTcpServer();
-                tcpServer.Start(ipaddress, tcpPort);
-            }
-            catch (Exception ex)
+            ///端口正在被占用
+            if (IsPortOccupedFun2(4198, 4530, 4531, 4532, 4533))
             {
-                LogHelper.Info("program运行错误：" + ex.Message);
                 Environment.Exit(0);
             }
+            else
+            {
+                string ipaddress = ConfigurationManager.AppSettings["ipaddress"].ToString();
+                try
+                {
+                    TUdpServer udpServer = new TUdpServer();
+                    udpServer.UdpStart(ipaddress, udpPort);
 
-
-
+                    MTcpServer tcpServer = new MTcpServer();
+                    tcpServer.Start(ipaddress, tcpPort);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    //LogHelper.Info("program运行错误：" + ex.Message);
+                    Environment.Exit(0);
+                }
+            }
             Console.Read();
         }
     }

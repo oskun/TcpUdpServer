@@ -34,17 +34,14 @@ namespace TcpUdpServer
                 Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                 try
                 {
-                    if(!server.IsBound)
-                    {
-                        server.Bind(new IPEndPoint(IPAddress.Parse(config.listenAddress), config.udpPort));
-                        EndPoint point = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
-                        byte[] bs = new byte[1024];
-                        UdpData ud = new UdpData();
-                        ud.socket = server;
-                        ud.data = bs;
-                        var asyncResult = server.BeginReceiveFrom(bs, 0, bs.Length, SocketFlags.None, ref point, OnUdpRecieve, ud);
-                    }
-                   
+                    server.Bind(new IPEndPoint(IPAddress.Parse(config.listenAddress), config.udpPort));
+                    EndPoint point = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
+                    byte[] bs = new byte[1024];
+                    UdpData ud = new UdpData();
+                    ud.socket = server;
+                    ud.data = bs;
+                    server.BeginReceiveFrom(bs, 0, bs.Length, SocketFlags.None, ref point, OnUdpRecieve, ud);
+
                 }
                 catch (SocketException se)
                 {
@@ -366,7 +363,6 @@ namespace TcpUdpServer
                                         {
                                             var mac = cmd.mac;
                                             mac = !string.IsNullOrEmpty(mac) ? mac.ToLower() : "";
-
 
                                             ///筛选日志
                                             var ipe = (IPEndPoint)point;
@@ -896,6 +892,15 @@ namespace TcpUdpServer
 
                 }
             }
+            try
+            {
+                ar.AsyncWaitHandle.Dispose();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("901"+ex.Message);
+            }
+           
 
 
         }
