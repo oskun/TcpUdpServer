@@ -154,17 +154,29 @@ begin
 select '0'
 end 
              */
-            var sp = new SqlParameter[]
-               {
-                    new SqlParameter("@deviceinfo_userinfo_id",deviceinfo_userinfo_id)
-               };
-            var db = new CommonDBHelper(Connection.YZK);
-            var data = db.getSalar("YZKDeviceInfo_UserInfo_IsDataExists", sp) + "";
-            if (data.Equals("1"))
+
+            var key = "key:deviceinfo_userinfo_id:" + deviceinfo_userinfo_id;
+            if (RedisHelper<bool>.IsKeyExist(key))
             {
                 return true;
             }
-            return false;
+            else
+            {
+                var sp = new SqlParameter[]
+              {
+                    new SqlParameter("@deviceinfo_userinfo_id",deviceinfo_userinfo_id)
+              };
+                var db = new CommonDBHelper(Connection.YZK);
+                var data = db.getSalar("YZKDeviceInfo_UserInfo_IsDataExists", sp) + "";
+                if (data.Equals("1"))
+                {
+                    RedisHelper<string>.StoreOneKeyMilliseconds(key, "1", 1000 * 120);
+                    return true;
+                }
+               
+                return false;
+            }
+
         }
 
 
@@ -190,18 +202,28 @@ select '0'
 end 
              */
 
-
-            var sp = new SqlParameter[]
-              {
-                    new SqlParameter("@deviceinfo_userinfo_id",deviceinfo_userinfo_id)
-              };
-            var db = new CommonDBHelper(Connection.hdl);
-            var data = db.getSalar("YZKDeviceInfo_UserInfo_IsDataExists", sp) + "";
-            if (data.Equals("1"))
+            var key = "key:deviceinfo_userinfo_id:" + deviceinfo_userinfo_id;
+            if (RedisHelper<string>.IsKeyExist(key))
             {
                 return true;
             }
-            return false;
+            else
+            {
+                var sp = new SqlParameter[]
+             {
+                    new SqlParameter("@deviceinfo_userinfo_id",deviceinfo_userinfo_id)
+             };
+                var db = new CommonDBHelper(Connection.hdl);
+                var data = db.getSalar("YZKDeviceInfo_UserInfo_IsDataExists", sp) + "";
+                if (data.Equals("1"))
+                {
+                    RedisHelper<string>.StoreOneKeyMilliseconds(key, "1", 1000 * 120);
+                    return true;
+                }
+               
+                return false;
+            }
+           
 
         }
 

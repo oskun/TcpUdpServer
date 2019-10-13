@@ -135,12 +135,16 @@ namespace TcpUdpServer
                     try
                     {
                         var item = macRelation[key];
-                        if (item.Address.Equals(address) && item.port.Equals(port))
+                        if(item!=null&&!string.IsNullOrEmpty(item.Address)&&item.port>0)
                         {
-                            value = macRelation[key];
-                            value.mac = key;
-                            break;
+                            if (item.Address.Equals(address) && item.port.Equals(port))
+                            {
+                                value = macRelation[key];
+                                value.mac = key;
+                                break;
+                            }
                         }
+                        
                     }
                     catch (Exception ex)
                     {
@@ -180,8 +184,7 @@ namespace TcpUdpServer
                 }
                 catch(Exception ex)
                 {
-                    Func<bool> func=()=>true;
-                    LogHelper.LogFilter(func, ex.StackTrace);
+                    LogHelper.LogFilter(true, ex.StackTrace);
                 }
                
 
@@ -193,7 +196,7 @@ namespace TcpUdpServer
                 }
                 catch (SocketException se)
                 {
-                    Console.WriteLine(se.ErrorCode + " " + se.Message);
+                    LogHelper.LogFilter(true, se.StackTrace);
                 }
 
             }
@@ -220,7 +223,7 @@ namespace TcpUdpServer
             }
             catch (Exception ex)
             {
-
+                LogHelper.LogFilter(true, ex.StackTrace);
             }
             return result;
         }

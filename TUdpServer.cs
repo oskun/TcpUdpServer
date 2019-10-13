@@ -125,7 +125,9 @@ namespace TcpUdpServer
                 var address = ipe.Address.ToString();
                 var port = ipe.Port;
                 Program.removeOnlineTcpRelation(address, port);
-                LogHelper.Info(_msg);
+                //LogHelper.Info(_msg);
+
+                LogHelper.LogFilter(true, se.StackTrace);
 
             }
 
@@ -166,9 +168,9 @@ namespace TcpUdpServer
                     {
                         Console.WriteLine("即将发送命令：" + str);
 
-                        Func<bool> func =()=> true;
+                        //Func<bool> func =()=> true;
 
-                        LogHelper.LogFilter(func, "发送命令:" + str);
+                        //LogHelper.LogFilter(func, "发送命令:" + str);
                         //var state = new List<IPEndPointState>();
                         //dicMacCmd[feidiemac] = point;
                         SendDataToDevice(device, cmdbyte);
@@ -243,8 +245,7 @@ namespace TcpUdpServer
             {
 
                 Func<bool> func1 = () => true;
-                var msgx = "UDP:"+se.Message;
-                LogHelper.LogFilter(func1, msgx);
+                LogHelper.LogFilter(true, se.StackTrace);
             }
         }
 
@@ -323,9 +324,10 @@ namespace TcpUdpServer
                 try
                 {
                     var len = server.EndReceiveFrom(ar, ref point);
-                    var bs = udp.data.ToList().GetRange(0, len).ToArray();
+                   
                     if (len > 0)
                     {
+                        var bs = udp.data.ToList().GetRange(0, len).ToArray();
                         string msg = Encoding.UTF8.GetString(bs, 0, len);
                       
                      
@@ -366,8 +368,8 @@ namespace TcpUdpServer
 
                                             ///筛选日志
                                             var ipe = (IPEndPoint)point;
-                                            Func<bool> func = () => (!string.IsNullOrEmpty(username) && username.Equals("贝贝") && ipe.Address.ToString().Equals("180.155.69.150") == false && (!string.IsNullOrEmpty(command) && command.StartsWith("01") == false && command.StartsWith("02") == false)) || (!string.IsNullOrEmpty(cmd.Id) && string.IsNullOrEmpty(username));
-                                            LogHelper.LogFilter(func, msg);
+                                            //Func<bool> func = () => (!string.IsNullOrEmpty(username) && username.Equals("贝贝") && ipe.Address.ToString().Equals("180.155.69.150") == false && (!string.IsNullOrEmpty(command) && command.StartsWith("01") == false && command.StartsWith("02") == false)) || (!string.IsNullOrEmpty(cmd.Id) && string.IsNullOrEmpty(username));
+                                            //LogHelper.LogFilter(func, msg);
 
 
                                             #region 正常命令
@@ -380,13 +382,16 @@ namespace TcpUdpServer
 
                                                     if (cmd.sid > 0)
                                                     {
-                                                        var app = string.Empty;
+                                                        var app = cmd.app;
 
                                                         if (!string.IsNullOrEmpty(app))
                                                         {
                                                             app = cmd.app.ToLower();
                                                         }
-
+                                                        else
+                                                        {
+                                                            app = string.Empty;
+                                                        }
                                                         var isExists = true;
                                                         if (app.Equals("yzk"))
                                                         {
@@ -395,12 +400,17 @@ namespace TcpUdpServer
                                                         else if (app.Equals("hdl"))
                                                         {
                                                             isExists = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_IsHDLDeviceExists(cmd.sid + "");
+                                                           
                                                         }
                                                         if (isExists)
                                                         {
                                                             var cmdbytes = StrHelper.strToHexByte(cmd.command);
                                                             ///给设备发送命令
                                                             LogHelper.Info("给设备发送命令：" + cmd.command, mu.device);
+                                                            if (!string.IsNullOrEmpty(app) && app.Equals("hdl"))
+                                                            {
+                                                                LogHelper.LogFilter(true, "cmd=>" + cmd.command);
+                                                            }
                                                             Program.upgradeClients(mac, point, server);
                                                             SendDataToDevice(mu.device, cmdbytes);
                                                         }
@@ -829,9 +839,9 @@ namespace TcpUdpServer
                                                                     LogHelper.Info("未找转发器异常:" + ex.Message);
 
 
-                                                                    Func<bool> func1 = () => true;
+                                                                    //Func<bool> func1 = () => true;
                                                                     var msgx = "UDP:800未找转发器异常:" + ex.Message;
-                                                                    LogHelper.LogFilter(func1, msgx);
+                                                                    LogHelper.LogFilter(true, ex.Message);
                                                                 }
                                                                 #endregion
                                                             }
@@ -872,7 +882,8 @@ namespace TcpUdpServer
                     point = ReConnctUDP(server, point);
                   
 
-                    LogHelper.Info(_msg);
+                    //LogHelper.Info(_msg);
+                    LogHelper.LogFilter(true, se.StackTrace);
                     return;
                 }
                 try
@@ -886,9 +897,7 @@ namespace TcpUdpServer
                     point = ReConnctUDP(server, point);
 
 
-                    Func<bool> func1 = () => true;
-                    var msgx = _msg;
-                    LogHelper.LogFilter(func1, msgx);
+                    LogHelper.LogFilter(true, se.StackTrace);
 
                 }
             }
@@ -899,6 +908,7 @@ namespace TcpUdpServer
             catch(Exception ex)
             {
                 Console.WriteLine("901"+ex.Message);
+                LogHelper.LogFilter(true, ex.StackTrace);
             }
            
 

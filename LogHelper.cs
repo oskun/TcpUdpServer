@@ -65,6 +65,17 @@ namespace TcpUdpServer
             }
         }
 
+
+
+        public static void LogFilter(bool  isRecord,string msg)
+        {
+            if (isRecord)
+            {
+                Console.WriteLine(msg);
+                logInfo.Info(msg);
+            }
+        }
+
     }
 
 

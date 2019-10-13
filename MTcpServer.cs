@@ -60,6 +60,7 @@ namespace TcpUdpServer
                 Console.WriteLine(ex.Message);
             }
             server.BeginAccept(onTcpAccept, server);
+            ar.AsyncWaitHandle.Dispose();
 
         }
 
@@ -73,7 +74,6 @@ namespace TcpUdpServer
             if (td != null)
             {
                 var socket = td.socket;
-
                 try
                 {
                     ///客户端断开连接时，会引发一个异常
@@ -84,20 +84,13 @@ namespace TcpUdpServer
                         td = null;
                         var _d = (IPEndPoint)socket.RemoteEndPoint;
                         Console.WriteLine("设备断开" + _d.Address + ":" + _d.Port);
-                        Program.removeOnlineTcpRelation(_d.Address.ToString(),_d.Port);
-                        ar = null;
+                        Program.removeOnlineTcpRelation(_d.Address.ToString(),_d.Port);                       
                     }
                     else
                     {
 
                         var bys = td.bs.ToList().GetRange(0, len).ToArray();
-                        var Info = MsgTypeHelper.GetHearBeatInfo(bys);
-                        //Task.Factory.StartNew(() =>
-                        //{
-                           
-
-
-                        //});
+                        var Info = MsgTypeHelper.GetHearBeatInfo(bys);                      
                         if (Info != null&&socket!=null)
                         {
 
@@ -154,7 +147,7 @@ namespace TcpUdpServer
                                 var address = ipe.Address.ToString();
                                 var port = ipe.Port;
                                 Program.removeOnlineTcpRelation(address,port);
-                                ar.AsyncWaitHandle.Close();
+                             
                                 LogHelper.Info("设备已经断开");
                             }
                         }
@@ -166,7 +159,7 @@ namespace TcpUdpServer
                             Program.removeOnlineTcpRelation(address, port);
                             Console.WriteLine("tcp 130" + ex.Message);
                             LogHelper.Info("设备已经断开");
-                            ar = null;
+                          
                         }
                     }
                 }
@@ -182,12 +175,20 @@ namespace TcpUdpServer
                     var address = ipe.Address.ToString();
                     var port = ipe.Port;
                     Program.removeOnlineTcpRelation(address, port);
-                    ar = null;
+                  
                 }
-
-
-
             }
+
+            try
+            {
+                ar.AsyncWaitHandle.Dispose();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Tcp:192"+ex.Message);               
+                LogHelper.LogFilter(true, ex.StackTrace);
+            }
+           
 
         }
 
@@ -201,15 +202,7 @@ namespace TcpUdpServer
         /// <param name="bys"></param>
         private void defualtMethod(Socket socket, MacIPVersionInfo info, byte[] ds)
         {
-            //var mac = info.mac;
-            //if (socketMap.ContainsKey(mac))
-            //{
-
-            //}
-            //else
-            //{
-
-            //}
+           
 
             var ipe = (IPEndPoint)socket.RemoteEndPoint;
             var address = ipe.Address.ToString();
@@ -275,7 +268,10 @@ namespace TcpUdpServer
                                 Func<bool> func1 = () => true;
                                 var msgx ="再次获取的时候居然断开了。。。。";
                                 LogHelper.LogFilter(func1, msgx);
-                             
+
+
+                              
+
                                 Program.removeOnlineTcpRelation(address,port);
 
 
@@ -291,9 +287,6 @@ namespace TcpUdpServer
                     });
                     thread.Start();
                     thread.Join(150);
-
-
-
                 }
                 #endregion
 
@@ -352,7 +345,9 @@ namespace TcpUdpServer
                                 {
                                     flag = false;
                                     queue.Clear();
-                                    LogHelper.Info("TCP:378:   " + ex.Message);
+                                    //LogHelper.Info("TCP:378:   " + ex.Message);
+
+                                    LogHelper.LogFilter(true, ex.StackTrace);
                                 }
 
                             }
@@ -365,9 +360,11 @@ namespace TcpUdpServer
                         Console.WriteLine("TCP:395" + ex.Message);
 
 
-                        Func<bool> func1 = () => true;
-                        var msgx = "TCP:395" + ex.Message;
-                        LogHelper.LogFilter(func1, msgx);
+                        //Func<bool> func1 = () => true;
+                        //var msgx = "TCP:395" + ex.Message;
+                        //LogHelper.LogFilter(func1, msgx);
+
+                        LogHelper.LogFilter(true, ex.StackTrace);
                     }
 
                 }
