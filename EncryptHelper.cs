@@ -23,6 +23,8 @@ namespace TcpUdpServer
 
         public static string MD5Encoding(string rawPass)
         {
+           
+
             // 创建MD5类的默认实例：MD5CryptoServiceProvider
             MD5 md5 = MD5.Create();
             byte[] bs = Encoding.UTF8.GetBytes(rawPass);
@@ -32,6 +34,12 @@ namespace TcpUdpServer
             {
                 // 以十六进制格式格式化
                 sb.Append(b.ToString("x2"));
+            }
+
+            if (rawPass.IndexOf("\"sid\":329") != -1)
+            {
+                Console.WriteLine("命令:" + rawPass);
+                Console.WriteLine("md5:" + sb.ToString());
             }
             return sb.ToString();
         }

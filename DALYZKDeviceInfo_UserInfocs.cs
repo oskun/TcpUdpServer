@@ -155,7 +155,7 @@ select '0'
 end 
              */
 
-            var key = "key:deviceinfo_userinfo_id:" + deviceinfo_userinfo_id;
+            var key = "key:deviceinfo_userinfo_id:yzk:" + deviceinfo_userinfo_id;
             if (RedisHelper<bool>.IsKeyExist(key))
             {
                 return true;
@@ -202,7 +202,7 @@ select '0'
 end 
              */
 
-            var key = "key:deviceinfo_userinfo_id:" + deviceinfo_userinfo_id;
+            var key = "key:deviceinfo_userinfo_id:hdl:" + deviceinfo_userinfo_id;
             if (RedisHelper<string>.IsKeyExist(key))
             {
                 return true;

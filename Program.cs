@@ -235,6 +235,9 @@ namespace TcpUdpServer
 
         const int tcpPort = 4198;
         const int udpPort = 4530;
+
+        //const int tcpPort = 5198;
+        //const int udpPort = 5530;
         //const string ipaddress = "118.25.68.161";
 
         //const string ipaddress = ConfigurationManager.AppSettings["ipaddress"].ToString();
@@ -252,6 +255,7 @@ namespace TcpUdpServer
             {
                 Environment.Exit(0);
             }
+
             else
             {
                 string ipaddress = ConfigurationManager.AppSettings["ipaddress"].ToString();

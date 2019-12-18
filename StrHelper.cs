@@ -117,5 +117,17 @@ namespace TcpUdpServer
             }
             return returnStr;
         }
+
+
+        /// <summary>
+        /// 单个16进制数转为10进制数
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns></returns>
+        public static int HexToInt(string hex)
+        {
+            var hexArray = "0123456789abcdef";
+            return hexArray.IndexOf(hex);
+        }
     }
 }

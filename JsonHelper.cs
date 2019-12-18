@@ -13,12 +13,16 @@ namespace TcpUdpServer
         {
             try
             {
-
+                Console.WriteLine("JSON:"+jsonstr);
                 if (!string.IsNullOrEmpty(jsonstr))
                 {
                     try
                     {
                         var t = JsonConvert.DeserializeObject<T>(jsonstr);
+                        if (t == null)
+                        {
+                            Console.WriteLine("转换出来是null");
+                        }
                         return t;
                     }
                     catch

@@ -50,7 +50,22 @@ namespace TcpUdpServer
         /// <summary>
         /// 报警
         /// </summary>
-        BAOJING = 7
+        BAOJING = 7,
+
+
+       
+        /// <summary>
+        /// 暖通设备控制
+        /// </summary>
+        NUANTONG = 8,
+
+
+
+        /// <summary>
+        /// 设备重启
+        /// </summary>
+        DEVICE_RESTART=9
+
 
     }
 }

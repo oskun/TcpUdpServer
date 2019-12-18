@@ -102,6 +102,7 @@
     <Compile Include="JinZhiConvert.cs" />
     <Compile Include="JsonHelper.cs" />
     <Compile Include="LogHelper.cs" />
+    <Compile Include="MacCheckDic.cs" />
     <Compile Include="MacIPInfo.cs" />
     <Compile Include="MacIPVersionInfo.cs" />
     <Compile Include="MacTcpUdp.cs" />

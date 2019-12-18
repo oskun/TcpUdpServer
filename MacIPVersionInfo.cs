@@ -31,5 +31,8 @@ namespace TcpUdpServer
         public HeartBeatType heartBeatType { get; set; }
 
 
+        public List<string> listcmd = new List<string>();
+
+
     }
 }

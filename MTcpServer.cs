@@ -65,7 +65,7 @@ namespace TcpUdpServer
         }
 
 
-       
+
 
 
         private void onTcpReceive(IAsyncResult ar)
@@ -84,14 +84,14 @@ namespace TcpUdpServer
                         td = null;
                         var _d = (IPEndPoint)socket.RemoteEndPoint;
                         Console.WriteLine("设备断开" + _d.Address + ":" + _d.Port);
-                        Program.removeOnlineTcpRelation(_d.Address.ToString(),_d.Port);                       
+                        Program.removeOnlineTcpRelation(_d.Address.ToString(), _d.Port);
                     }
                     else
                     {
 
                         var bys = td.bs.ToList().GetRange(0, len).ToArray();
-                        var Info = MsgTypeHelper.GetHearBeatInfo(bys);                      
-                        if (Info != null&&socket!=null)
+                        var Info = MsgTypeHelper.GetHearBeatInfo(bys);
+                        if (Info != null && socket != null)
                         {
 
                             try
@@ -108,6 +108,7 @@ namespace TcpUdpServer
                                     HanFengMethod(socket, Info, bys);
                                 }
                                 ///校验时间
+                                ///cun
                                 else if (heartBeatType == HeartBeatType.CHECK_TIME)
                                 {
                                     checkTimeMethod(socket, Info, bys);
@@ -123,11 +124,20 @@ namespace TcpUdpServer
                                     defualtMethod(socket, Info, bys);
 
                                 }
+                                else if (heartBeatType == HeartBeatType.NUANTONG)
+                                {
+                                    MIDDLENUANTONG(socket, Info, bys);
+                                }
+                                ///设备重启返回
+                                else if (heartBeatType == HeartBeatType.DEVICE_RESTART)
+                                {
+                                    DEVICE_RESTART(socket,Info,bys);
+                                }
                             }
                             catch (Exception ex)
                             {
                                 // throw ex;
-                                LogHelper.Info("tcp:168" + ex.Message+"    "+ex.StackTrace);
+                                LogHelper.Info("tcp:168" + ex.Message + "    " + ex.StackTrace);
                             }
 
                         }
@@ -146,8 +156,8 @@ namespace TcpUdpServer
                                 var ipe = (IPEndPoint)socket.RemoteEndPoint;
                                 var address = ipe.Address.ToString();
                                 var port = ipe.Port;
-                                Program.removeOnlineTcpRelation(address,port);
-                             
+                                Program.removeOnlineTcpRelation(address, port);
+
                                 LogHelper.Info("设备已经断开");
                             }
                         }
@@ -159,7 +169,7 @@ namespace TcpUdpServer
                             Program.removeOnlineTcpRelation(address, port);
                             Console.WriteLine("tcp 130" + ex.Message);
                             LogHelper.Info("设备已经断开");
-                          
+
                         }
                     }
                 }
@@ -175,7 +185,7 @@ namespace TcpUdpServer
                     var address = ipe.Address.ToString();
                     var port = ipe.Port;
                     Program.removeOnlineTcpRelation(address, port);
-                  
+
                 }
             }
 
@@ -183,13 +193,61 @@ namespace TcpUdpServer
             {
                 ar.AsyncWaitHandle.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine("Tcp:192"+ex.Message);               
+                Console.WriteLine("Tcp:192" + ex.Message);
                 LogHelper.LogFilter(true, ex.StackTrace);
             }
-           
 
+
+        }
+
+        /// <summary>
+        /// 设备重启
+        /// </summary>
+        /// <param name="socket"></param>
+        /// <param name="info"></param>
+        /// <param name="bys"></param>
+        private void DEVICE_RESTART(Socket socket, MacIPVersionInfo info, byte[] bys)
+        {
+          var msg = StrHelper.GetHexStr(bys).Replace(" ","");
+            //0x55 + 0xFF + 0x13 + mac(6B) + CRC
+            if (msg.Length == 20)
+            {
+                var mac = msg.Substring(6, 12);
+                LogHelper.LogFilter(true, $"设备重启=>{mac},{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")},{msg}");
+            }
+        }
+
+        private void MIDDLENUANTONG(Socket socket, MacIPVersionInfo info, byte[] bys)
+        {
+            var list = info.listcmd;
+            var mac = info.mac;
+            if (!string.IsNullOrEmpty(mac))
+            {
+                var macInfo = Program.GetRelation(mac);
+                if (macInfo != null&& info.listcmd!=null&& info.listcmd.Count>0)
+                {
+                    var dev = macInfo.device;
+                    if (dev != null)
+                    {
+                        foreach (var str in info.listcmd)
+                        {
+                            try
+                            {
+                                dev.Send(Encoding.UTF8.GetBytes(str));
+                                Thread.Sleep(500);
+                            }
+                            catch
+                            {
+
+                            }
+                           
+                        }
+                       
+                    }
+                }
+            }
         }
 
 
@@ -202,12 +260,12 @@ namespace TcpUdpServer
         /// <param name="bys"></param>
         private void defualtMethod(Socket socket, MacIPVersionInfo info, byte[] ds)
         {
-           
+
 
             var ipe = (IPEndPoint)socket.RemoteEndPoint;
             var address = ipe.Address.ToString();
             var port = ipe.Port;
-            var mu = Program.GetRelation(address,port);
+            var mu = Program.GetRelation(address, port);
             if (mu != null)
             {
 
@@ -266,13 +324,13 @@ namespace TcpUdpServer
 
 
                                 Func<bool> func1 = () => true;
-                                var msgx ="再次获取的时候居然断开了。。。。";
+                                var msgx = "再次获取的时候居然断开了。。。。";
                                 LogHelper.LogFilter(func1, msgx);
 
 
-                              
 
-                                Program.removeOnlineTcpRelation(address,port);
+
+                                Program.removeOnlineTcpRelation(address, port);
 
 
                             }
@@ -280,7 +338,7 @@ namespace TcpUdpServer
                         catch (SocketException sek)
                         {
                             Console.WriteLine(sek.Message);
-                            Program.removeOnlineTcpRelation(address,port);
+                            Program.removeOnlineTcpRelation(address, port);
                         }
 
 
@@ -309,6 +367,10 @@ namespace TcpUdpServer
             var mac = mu.mac;
             if (!string.IsNullOrEmpty(mac))
             {
+                if (mac.Equals("98d8634a0344", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogHelper.LogFilter(true, "返回=>" + rdata);
+                }
 
             }
             else
@@ -609,6 +671,12 @@ namespace TcpUdpServer
                 {
                     var ip = info.IP;
                     var orgText = StrHelper.GetHexStr(bys);
+
+
+                    if (!string.IsNullOrEmpty(mac) && (mac.Equals("98d8634a034e") || mac.Equals("98d8634a0344")||mac.Equals("98d8638c7fa2")))
+                    {
+                        LogHelper.LogFilter(true, $"心跳包=>{info.mac},{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}");
+                    }
                     DALMacIPInfo.MacIPInfo_Add(new MacIPInfo()
                     {
                         mac = info.mac,
@@ -656,7 +724,7 @@ namespace TcpUdpServer
             #region 设置时间
             if (!RedisHelper<string>.IsKeyExist(key))
             {
-             
+
                 Task.Factory.StartNew(() =>
                 {
 
@@ -670,9 +738,9 @@ namespace TcpUdpServer
                         Thread.Sleep(50);
 
                     }
-                    catch(SocketException se)
+                    catch (SocketException se)
                     {
-                       
+
 
 
                         Func<bool> func1 = () => true;
@@ -684,7 +752,7 @@ namespace TcpUdpServer
                 });
 
 
-               
+
 
             }
             #endregion
@@ -696,6 +764,10 @@ namespace TcpUdpServer
                 task.StartNew(() =>
                 {
                     var orgText = StrHelper.GetHexStr(bys);
+                    if (!string.IsNullOrEmpty(mac) && (mac.Equals("98d8634a034e") || mac.Equals("98d8634a0344") || mac.Equals("98d8638c7fa2")))
+                    {
+                        LogHelper.LogFilter(true, $"心跳包=>{mac},{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}");
+                    }
                     DALMacIPInfo.MacIPInfo_Add(new MacIPInfo()
                     {
                         mac = mac,

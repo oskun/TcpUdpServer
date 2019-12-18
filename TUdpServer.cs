@@ -316,9 +316,6 @@ namespace TcpUdpServer
             if (udp != null)
             {
                 var server = udp.socket;
-
-
-
                 EndPoint point = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
 
                 try
@@ -329,6 +326,10 @@ namespace TcpUdpServer
                     {
                         var bs = udp.data.ToList().GetRange(0, len).ToArray();
                         string msg = Encoding.UTF8.GetString(bs, 0, len);
+                        //if (msg.IndexOf("\"sid\":329") != -1)
+                        //{
+                        //    Console.WriteLine("命令:"+msg);
+                        //}
                       
                      
                         if (!string.IsNullOrEmpty(msg))
@@ -354,9 +355,13 @@ namespace TcpUdpServer
                                 //LogHelper.Info("收到UDP消息:"+msg);
                                 if (!RedisHelper<string>.IsKeyExist(msgMd5))
                                 {
+
+                                    Console.WriteLine("mdgmd5:"+msgMd5);
                                     var cmd = JsonHelper<ClientCommand>.GetObject(msg);
+                                 
                                     if (cmd != null)
                                     {
+                                        Console.WriteLine("cmd:" + cmd.sid);
                                         var cmdtype = cmd.commandType;
                                         var command = cmd.command;
                                         var value = cmd.value;
@@ -399,6 +404,11 @@ namespace TcpUdpServer
                                                         }
                                                         else if (app.Equals("hdl"))
                                                         {
+                                                            if(cmd.sid==329)
+                                                            {
+                                                                Console.WriteLine("===============329=================");
+                                                            }
+                                                         
                                                             isExists = DALYZKDeviceInfo_UserInfocs.YZKDeviceInfo_UserInfo_IsHDLDeviceExists(cmd.sid + "");
                                                            
                                                         }
@@ -407,9 +417,9 @@ namespace TcpUdpServer
                                                             var cmdbytes = StrHelper.strToHexByte(cmd.command);
                                                             ///给设备发送命令
                                                             LogHelper.Info("给设备发送命令：" + cmd.command, mu.device);
-                                                            if (!string.IsNullOrEmpty(app) && app.Equals("hdl"))
+                                                            if (mac.Equals("98d8634a0344"))
                                                             {
-                                                                LogHelper.LogFilter(true, "cmd=>" + cmd.command);
+                                                                LogHelper.LogFilter(false, "cmd=>" + cmd.command);
                                                             }
                                                             Program.upgradeClients(mac, point, server);
                                                             SendDataToDevice(mu.device, cmdbytes);
@@ -423,6 +433,11 @@ namespace TcpUdpServer
                                                     }
                                                     else
                                                     {
+
+                                                        if (mac.Equals("98d8634a0344"))
+                                                        {
+                                                            LogHelper.LogFilter(true, "cmd=>" + cmd.command);
+                                                        }
                                                         var cmdbytes = StrHelper.strToHexByte(cmd.command);
                                                         ///给设备发送命令
                                                         LogHelper.Info("给设备发送命令：" + cmd.command, mu.device);
@@ -649,7 +664,7 @@ namespace TcpUdpServer
                                                                                     }
                                                                                     else
                                                                                     {
-                                                                                        var findValue = "开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                                                                                        var findValue = "开灯,开,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
                                                                                         TurnOnMethod(protocol_type, point, mu.device, mac, ykMessages, findValue);
                                                                                     }
 
@@ -664,7 +679,7 @@ namespace TcpUdpServer
                                                                                     }
                                                                                     else
                                                                                     {
-                                                                                        var findValue = "电源,关".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                                                                                        var findValue = "关灯,关,电源".Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
                                                                                         TurnOnMethod(protocol_type, point, mu.device, mac, ykMessages, findValue);
                                                                                     }
 

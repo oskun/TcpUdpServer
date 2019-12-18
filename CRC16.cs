@@ -76,6 +76,13 @@ namespace TcpUdpServer
 
 
 
+        public static string CRC16Data(string hexstr)
+        {
+            return string.Empty;
+        }
+
+
+
         public static byte[] CRC_XModem(string hexstr)
         {
 

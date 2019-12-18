@@ -60,6 +60,7 @@ namespace TcpUdpServer
                         }
                     }
                 }
+               
             }
 
             return string.Empty;
@@ -84,6 +85,7 @@ namespace TcpUdpServer
                 {
                     return HeartBeatType.YILIN;
                 }
+
                 else if (msg[0] == 85 && msg[1] == 255 && msg[2] == 14 && msg[3] == 98)
                 {
                     return HeartBeatType.CHECK_TIME;
@@ -93,10 +95,34 @@ namespace TcpUdpServer
                 {
                     return HeartBeatType.BAOJING;
                 }
+                //0x55 + 0xFF + 0x13 + mac(6B) + CRC
+                else if (msg[0] == 85 && msg[1] == 255 && msg[2] == 19)
+                {
+                    return HeartBeatType.DEVICE_RESTART;
+                }
+                ///暖通设备
+
+                else if (msg[0] == 85 && msg[1] == 255 && msg[2] == 18 && msg.Length > 20)
+                {
+                    /*
+                     * 0x55 + 0xFF + 0x11 + mac(6B) +tCount(1B) + [cCount(1B) + command]+ CRC
+
+tCount：表示有几个指令
+[]：表示的是指令集，个数由tCount决定， 每个指令为指令长度+指令内容组成；
+云端收到操作后按照指令集依次发送到对应mac设备， 如mac设备离线忽略操作；
+                     * 
+                     * 
+                     */
+
+                    return HeartBeatType.NUANTONG;
+
+                }
+
                 else if (msg[0] == 123 && msg[msg.Length - 1] == 125)
                 {
                     return HeartBeatType.CMD;
                 }
+
                 //55 ff 08 00 01 5d
                 //55 ff 08 00 00 5c
                 //55 ff 08 01 01 5e
@@ -161,14 +187,14 @@ namespace TcpUdpServer
             mo.heartBeatType = ht;
             if (ht == HeartBeatType.HANFEN)
             {
-                var mac = string.Empty;             
+                var mac = string.Empty;
                 mo.IP = GetHANFENIP(msg, out mac);
                 mo.mac = mac;
                 mo.version = "";
             }
             else if (ht == HeartBeatType.YILIN)
             {
-                var mac = string.Empty;  
+                var mac = string.Empty;
                 mo.IP = "";
                 mo.mac = GetMacMsg(msg, HeartBeatType.YILIN);
                 mo.version = "";
@@ -176,7 +202,7 @@ namespace TcpUdpServer
             else if (ht == HeartBeatType.DEFAULT)
             {
                 var mac = string.Empty;
-              
+
                 mo.heartBeatType = ht;
                 mo.IP = "";
                 mo.mac = mac;
@@ -186,7 +212,7 @@ namespace TcpUdpServer
             else if (ht == HeartBeatType.CMD)
             {
                 var mac = string.Empty;
-              
+
                 mo.heartBeatType = ht;
                 mo.IP = "";
                 mo.mac = mac;
@@ -195,15 +221,15 @@ namespace TcpUdpServer
             else if (ht == HeartBeatType.BUFANGCHEFANG)
             {
                 var mac = string.Empty;
-              
-                mo.heartBeatType =ht;
+
+                mo.heartBeatType = ht;
                 mo.IP = "";
                 mo.mac = mac;
                 mo.version = "";
             }
             else if (ht == HeartBeatType.CHECK_TIME)
             {
-                var mac = string.Empty;             
+                var mac = string.Empty;
                 mo.heartBeatType = ht;
                 mo.IP = "";
                 mo.mac = mac;
@@ -212,11 +238,66 @@ namespace TcpUdpServer
             else if (ht == HeartBeatType.BAOJING)
             {
                 var mac = string.Empty;
-              
+
                 mo.heartBeatType = ht;
                 mo.IP = "";
                 mo.mac = mac;
                 mo.version = "";
+            }
+            else if (ht == HeartBeatType.DEVICE_RESTART)
+            {
+                string mac = string.Empty;
+                mo.heartBeatType = ht;
+                mo.IP = "";
+                mo.mac = mac;
+                mo.version = "";
+                
+            }
+            else if (ht == HeartBeatType.NUANTONG)
+            {
+                /*
+                 16) 暖通设备控制支持
+目前暖通控制通过云端执行操作，格式如
+0x55 + 0xFF + 0x11 + mac(6B) +tCount(1B) + [cCount(1B) + command]+ CRC
+
+tCount：表示有几个指令
+[]：表示的是指令集，个数由tCount决定， 每个指令为指令长度+指令内容组成；
+云端收到操作后按照指令集依次发送到对应mac设备， 如mac设备离线忽略操作；
+                */
+
+                mo.heartBeatType = ht;
+                mo.IP = "";
+                mo.version = "";
+
+
+                var str = StrHelper.GetHexStr(msg).Replace(" ", "");
+
+                if (str.Length >= 20)
+                {
+                    ///mac
+                    var mac = str.Substring(6, 12);
+
+                    LogHelper.LogFilter(true, "暖通==>" + str);
+                    var tcount = str.Substring(18, 2);
+                    var count = Convert.ToInt32(tcount, 16);
+                    //index=14
+                    //55ff11 262040589573 01 07 0110660130fc9b
+                    //55ff11 262040589573 02 07 0110660130fc9b 78070110660130fc9b78
+                    //55ff11 262040589573 02 07 0110660130fc9b 07 0110660130fc9b78
+                    var start = 20;
+                    for (var i = 0; i < count; i++)
+                    {
+                        if (start >= str.Length)
+                        {
+                            break;
+                        }
+                        var cmdCount = Convert.ToInt32(str.Substring(start, 2).ToLower(), 16);
+                        var cmd = str.Substring(start + 2, cmdCount * 2);
+                        mo.listcmd.Add(cmd);
+                        start = start + cmdCount * 2 + 2;
+
+                    }
+                }
             }
 
             return mo;
